@@ -3,7 +3,7 @@ import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { PlayPage } from './pages/PlayPage';
 import { AdminPage } from './pages/AdminPage';
-import { Swords, ShieldAlert, Flag, Home } from 'lucide-react';
+import { Swords, ShieldAlert, Home } from 'lucide-react';
 
 const NavigationHeader: React.FC = () => {
   const location = useLocation();

@@ -7,12 +7,10 @@ import {
   CheckCircle2, 
   AlertCircle, 
   RefreshCw, 
-  Flame, 
   Flag, 
   Users, 
   ChevronRight,
-  Sparkles,
-  Award
+  Sparkles
 } from 'lucide-react';
 import { Question } from '../types/game';
 import { fetchAndParseQuestions } from '../utils/markdownParser';

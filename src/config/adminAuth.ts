@@ -3,7 +3,7 @@
  * Phục vụ thuyết trình Chủ đề 6 môn VNR202 (Đại học FPT)
  */
 
-import { HistoricalMilestone, TeamId, TeamState } from '../types/game';
+import { HistoricalMilestone, TeamState } from '../types/game';
 
 /**
  * Thông tin Quản trị viên Chỉ Huy Sở (Nhóm 6 - BTC lớp)

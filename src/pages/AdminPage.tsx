@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
   ShieldAlert, 
-  KeyRound, 
-  UserCheck, 
   FileUp, 
   RefreshCw, 
   CheckCircle2, 
@@ -14,9 +12,7 @@ import {
   Users, 
   Activity, 
   Lock,
-  LogOut,
-  Sparkles,
-  ChevronDown
+  LogOut
 } from 'lucide-react';
 import { ADMIN_CONFIG, INITIAL_TEAMS_CONFIG, verifyAdminCredentials } from '../config/adminAuth';
 import { GameSummaryStats, PlayerState, Question, TeamState } from '../types/game';

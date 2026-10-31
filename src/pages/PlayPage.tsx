@@ -5,13 +5,9 @@ import {
   Flame, 
   Shield, 
   Zap, 
-  Award, 
   User, 
   CheckCircle, 
-  Clock, 
-  Flag,
-  Sparkles,
-  HelpCircle
+  Sparkles
 } from 'lucide-react';
 import { PlayerState, Question, TeamId } from '../types/game';
 import { INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
