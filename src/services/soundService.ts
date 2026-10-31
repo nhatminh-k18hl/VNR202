@@ -80,7 +80,7 @@ class SoundService {
         osc.stop(now + idx * 0.08 + 0.3);
       });
     } catch {
-      // Bỏ qua lỗi audio context trên mobile chưa tương tác
+      // Ignored
     }
   }
 
@@ -146,7 +146,7 @@ class SoundService {
   }
 
   /**
-   * Âm thanh tấn công/debuff/còi báo động
+   * Âm thanh còi báo động: Cảnh báo địch phản kích (1s đếm ngược)
    */
   public playAttack() {
     if (this.isMuted) return;
@@ -158,12 +158,12 @@ class SoundService {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(320, now);
-      osc.frequency.setValueAtTime(480, now + 0.12);
-      osc.frequency.setValueAtTime(320, now + 0.24);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(450, now);
+      osc.frequency.setValueAtTime(650, now + 0.12);
+      osc.frequency.setValueAtTime(450, now + 0.24);
 
-      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.setValueAtTime(0.3, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.38);
 
       osc.connect(gain);
@@ -171,6 +171,96 @@ class SoundService {
 
       osc.start(now);
       osc.stop(now + 0.4);
+    } catch {
+      // Ignored
+    }
+  }
+
+  /**
+   * Âm thanh đỡ đòn thành công (Lá chắn Trại Davis / Nghi binh): Tiếng chuông thép kim loại vang rền (Boong)
+   */
+  public playShieldBlock() {
+    if (this.isMuted) return;
+    try {
+      this.initContext();
+      if (!this.ctx || !this.masterGain) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.3);
+
+      gain.gain.setValueAtTime(0.5, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.5);
+    } catch {
+      // Ignored
+    }
+  }
+
+  /**
+   * Âm thanh bị trúng pháo kích (Khi không kịp đỡ)
+   */
+  public playExplosion() {
+    if (this.isMuted) return;
+    try {
+      this.initContext();
+      if (!this.ctx || !this.masterGain) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(90, now);
+      osc.frequency.exponentialRampToValueAtTime(30, now + 0.45);
+
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.5);
+    } catch {
+      // Ignored
+    }
+  }
+
+  /**
+   * Âm thanh nhặt/tranh mua vật phẩm Chợ Quân Nhu dã chiến
+   */
+  public playClaimItem() {
+    if (this.isMuted) return;
+    try {
+      this.initContext();
+      if (!this.ctx || !this.masterGain) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(350, now);
+      osc.frequency.setValueAtTime(520, now + 0.08);
+
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.22);
     } catch {
       // Ignored
     }
@@ -186,7 +276,6 @@ class SoundService {
       if (!this.ctx || !this.masterGain) return;
 
       const now = this.ctx.currentTime;
-      // Fanfare: C4, G4, C5, E5, G5, C6
       const fanfare = [
         { f: 261.63, t: 0.0, d: 0.2 },
         { f: 392.00, t: 0.15, d: 0.2 },

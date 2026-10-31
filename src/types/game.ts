@@ -1,6 +1,6 @@
 /**
  * THẦN TỐC 1975 - HỆ THỐNG ĐỊNH NGHĨA DỮ LIỆU ĐẦY ĐỦ (GAME TYPES)
- * Phục vụ thuyết trình Chủ đề 6 môn VNR202 (Đại học FPT)
+ * Thiết kế cho Sa Bàn Tác Chiến Đại Thắng Mùa Xuân 1975
  */
 
 export interface QuestionOptions {
@@ -26,14 +26,23 @@ export interface Question {
 export type TeamId = 'team_1' | 'team_2' | 'team_3' | 'team_4' | 'team_5' | 'team_7';
 
 /**
- * 5 Loại Vật phẩm Chiến thuật (Tactical Items)
+ * Vai trò trong Kíp Lái Xe Tăng (Tank Crew Roles)
+ */
+export type CrewRole = 
+  | 'COMMANDER'  // Trưởng xe: Quyết định kích hoạt Khiên & Lệnh Thần Tốc
+  | 'DRIVER'     // Lái xe: Giữ vững tay lái, vượt địa hình
+  | 'GUNNER'     // Pháo thủ: Ngắm bắn đáp án chính xác
+  | 'LOADER'     // Tiếp đạn & Quân nhu: Tranh giành vật phẩm Chợ Quân Nhu
+  | 'RADIO';     // Báo vụ: Cảnh báo sớm pháo kích địch
+
+/**
+ * 4 Loại Vật phẩm Chiến thuật Phòng Thủ & Tác Chiến Dã Chiến (Không đánh lẫn nhau)
  */
 export type ItemType =
-  | 'SPEED_ORDER'       // ⚡ Mệnh lệnh Thần tốc (x2 điểm & x2 tiến độ câu tiếp)
-  | 'TRUONG_SON_PIPE'   // ⛽ Đường ống Trường Sơn (+6% tiến độ tức thì)
-  | 'PLEIKU_DECEPTION'  // 🎭 Nghi binh Pleiku (Làm rung/nhiễu đội dẫn đầu trong 6s)
-  | 'ROUTE_7_BLOCK'     // 🚧 Chặn đường số 7 (Làm chậm 50% đội mục tiêu trong 8s)
-  | 'DAVIS_SHIELD';     // 🛡️ Lá chắn Trại Davis (Miễn nhiễm tấn công trong 10s)
+  | 'DAVIS_SHIELD'      // 🛡️ Lá chắn Trại Davis (Phòng thủ tuyệt đối: Chặn 100% đòn phản kích của địch)
+  | 'PLEIKU_DECEPTION'  // 🎭 Nghi binh Tây Nguyên (Hóa giải không kích & phân tán hỏa lực địch)
+  | 'SPEED_ORDER'       // ⚡ Mệnh lệnh Thần tốc (Nhân đôi tốc độ tiến quân và điểm số câu tiếp theo)
+  | 'TRUONG_SON_PIPE';  // ⛽ Xăng dầu Trường Sơn (Hồi phục nhiên liệu, tiến ngay +6% và hóa giải khựng)
 
 export interface BoostItem {
   id: string;
@@ -42,6 +51,40 @@ export interface BoostItem {
   description: string;
   icon: string;
   acquiredAt: number;
+}
+
+/**
+ * Vật phẩm trong Chợ Quân Nhu Dã Chiến (Tactics Draft Market)
+ * Cơ chế giống Auto Chess: số lượng giới hạn, các đội tranh nhau nhặt/mua
+ */
+export interface TacticsMarketItem {
+  id: string;
+  type: ItemType;
+  name: string;
+  description: string;
+  icon: string;
+  stock: number; // 0 hoặc 1
+  claimedByTeamId?: TeamId;
+  claimedByTeamName?: string;
+  claimedByPlayerName?: string;
+}
+
+/**
+ * Đợt Địch Phản Kích (Boss Counter-Attack) với Dữ Liệu Lịch Sử Thật
+ */
+export interface EnemyCounterAttack {
+  id: string;
+  targetTeamId: TeamId;
+  targetTeamName: string;
+  historicalEventName: string; // Tên chiến sự thật 1975
+  historicalDetail: string;    // Chi tiết bối cảnh lịch sử
+  issuedAt: number;
+  countdownMs: number;         // 1000ms đếm ngược
+  remainingMs: number;
+  isDefended: boolean;
+  isResolved: boolean;
+  defenderName?: string;
+  usedItemType?: ItemType;
 }
 
 export interface ActiveEffect {
@@ -66,6 +109,7 @@ export interface TeamState {
   totalScore: number;     // Tổng điểm tích lũy toàn đội
   memberCount: number;    // Số chiến sĩ tham gia
   activeEffects: ActiveEffect[]; // Các hiệu ứng đang tác động lên xe tăng
+  heldItem: BoostItem | null;    // Quy tắc: Mỗi đội chỉ giữ tối đa 1 vật phẩm chưa dùng!
 }
 
 export interface PlayerState {
@@ -73,13 +117,14 @@ export interface PlayerState {
   name: string;
   studentCode?: string;
   teamId: TeamId;
+  crewRole?: CrewRole;
   score: number;
   currentStreak: number;
   maxStreak: number;
   correctCount: number;
   totalAnswered: number;
   inventory: BoostItem[];
-  isSpeedBoostActive?: boolean; // Cờ hiệu x2 câu tiếp
+  isSpeedBoostActive?: boolean;
   isBot?: boolean;
 }
 
@@ -100,13 +145,16 @@ export interface RoomState {
   firebaseDbUrl?: string;
   isBotActive: boolean;
   currentQuestionId?: string | number;
+  remainingSeconds: number; // Đếm ngược 5 phút (300s)
+  activeEnemyAttack: EnemyCounterAttack | null;
+  tacticsMarket: TacticsMarketItem[];
 }
 
 export interface LiveBattleEvent {
   id: string;
   timestamp: number;
   message: string;
-  type: 'boost' | 'attack' | 'progress' | 'streak' | 'finish' | 'info';
+  type: 'boost' | 'attack' | 'progress' | 'streak' | 'finish' | 'info' | 'enemy';
   teamId?: TeamId;
   playerName?: string;
 }

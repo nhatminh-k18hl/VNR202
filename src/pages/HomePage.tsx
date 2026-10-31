@@ -11,31 +11,33 @@ import {
   Trophy,
   Flame,
   Zap,
-  Target
+  Target,
+  Clock,
+  Shield,
+  HelpCircle,
+  Play
 } from 'lucide-react';
 import { HISTORICAL_MILESTONES, INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
 
-export const HomePage: React.FC = () => {
+interface HomePageProps {
+  onOpenDraftModal?: () => void;
+}
+
+export const HomePage: React.FC<HomePageProps> = ({ onOpenDraftModal }) => {
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-14">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-12">
       {/* ===================================================
           HERO BANNER - HÀO KHÍ MÙA XUÂN 1975
           =================================================== */}
-      <section className="text-center space-y-6 pt-4 pb-2 relative">
-        {/* Dấu Mật Lịch Sử */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-950/80 border border-red-700/80 text-amber-300 text-xs font-black uppercase tracking-widest shadow-lg shadow-red-950/60">
-          <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-          <span>VNR202 • Lịch Sử Đảng Cộng Sản Việt Nam • Chủ Đề 6</span>
-        </div>
-
-        {/* Tiêu đề chính hào hùng */}
+      <section className="text-center space-y-5 pt-4 pb-2 relative">
+        {/* Tiêu đề chính */}
         <div className="space-y-2">
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white uppercase drop-shadow-2xl">
             <span className="text-amber-300">THẦN TỐC</span>{' '}
             <span className="text-red-500">1975</span>
           </h1>
           <p className="text-sm sm:text-base font-bold text-amber-200/90 uppercase tracking-widest">
-            Đại Thắng Mùa Xuân • Giải Phóng Hoàn Toàn Miền Nam
+            Sa Bàn Tác Chiến Lịch Sử • Giải Phóng Hoàn Toàn Miền Nam
           </p>
         </div>
 
@@ -55,6 +57,19 @@ export const HomePage: React.FC = () => {
           <div className="text-right text-xs text-slate-400 font-bold mt-2">
             — Đại tướng Võ Nguyên Giáp (Văn)
           </div>
+        </div>
+
+        {/* Nút Bấm Vào Draft Để Giới Thiệu & Diễn Tập */}
+        <div className="flex items-center justify-center gap-3 pt-2">
+          {onOpenDraftModal && (
+            <button
+              onClick={onOpenDraftModal}
+              className="px-5 py-2.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border-2 border-amber-400/80 text-amber-300 hover:text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg hover:scale-105"
+            >
+              <HelpCircle className="w-4 h-4 text-amber-400" />
+              <span>Xem Sổ Tay Tác Chiến & Hướng Dẫn Diễn Tập (Draft)</span>
+            </button>
+          )}
         </div>
       </section>
 
@@ -85,8 +100,7 @@ export const HomePage: React.FC = () => {
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Nhập vai chiến sĩ giải phóng quân thuộc 6 Cánh quân (Nhóm 1, 2, 3, 4, 5 và 7). 
-                Cùng đồng đội trả lời trắc nghiệm, tích lũy Streak, tung Lệnh bài chiến thuật để đẩy xe tăng T-54 húc đổ cổng Dinh Độc Lập!
+                Nhập vai thành viên kíp lái xe tăng thuộc 6 Cánh quân. Phối hợp trả lời nhanh trắc nghiệm trong 20 giây, kích hoạt Lá chắn đỡ đòn phản kích của địch và tranh quân nhu dã chiến!
               </p>
             </div>
           </div>
@@ -94,107 +108,153 @@ export const HomePage: React.FC = () => {
           <div className="mt-6 pt-4 border-t border-[#233526] flex items-center justify-between text-xs text-slate-400">
             <span className="font-semibold text-slate-300">6 Cánh quân thi đua</span>
             <span className="text-amber-400 font-black group-hover:translate-x-1 transition-transform flex items-center gap-1">
-              Bắt đầu xung phong →
+              Nhận lệnh xuất kích →
             </span>
           </div>
         </Link>
 
-        {/* Cửa Khẩu 2: Dành cho Ban Quản trò Nhóm 6 */}
+        {/* Cửa Khẩu 2: Dành cho Ban Quản trò Chỉ Huy Sở */}
         <Link 
           to="/admin"
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2a1315] via-[#1a0e10] to-[#0c140d] p-7 sm:p-8 border-2 border-[#4a1f23] hover:border-red-500/80 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/20 hover:-translate-y-1.5 flex flex-col justify-between"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#261515] via-[#1a0f0f] to-[#0d0909] p-7 sm:p-8 border-2 border-red-900/60 hover:border-red-500 transition-all duration-300 hover:shadow-2xl hover:shadow-red-600/20 hover:-translate-y-1.5 flex flex-col justify-between"
         >
-          <div className="absolute top-0 right-0 w-40 h-40 bg-red-600/10 rounded-full blur-3xl group-hover:bg-red-600/25 transition-all" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-red-600/10 rounded-full blur-3xl group-hover:bg-red-600/20 transition-all" />
 
           <div className="space-y-4">
             <div className="flex items-start justify-between">
-              <div className="w-14 h-14 rounded-2xl bg-red-600/15 border border-red-500/40 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform shadow-lg shadow-red-950/40">
-                <ShieldAlert className="w-7 h-7" />
+              <div className="w-14 h-14 rounded-2xl bg-red-600/15 border border-red-500/40 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform shadow-lg shadow-red-950/60">
+                <ShieldAlert className="w-7 h-7 text-amber-300" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30">
-                Ban Quản Trò Nhóm 6
+              <span className="text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-red-950/80 text-amber-300 border border-red-800">
+                Ban Quản Trò
               </span>
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-red-400 transition-colors flex items-center gap-2">
-                Chỉ Huy Sở Mặt Trận
+              <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-amber-300 transition-colors flex items-center gap-2">
+                Chỉ Huy Sở Tác Chiến
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Bộ Chỉ huy Chiến dịch Hồ Chí Minh (Căn cứ Tà Thiết - Lộc Ninh): Quản trị sa bàn 6 làn xe tăng thời gian thực, điều phối nhịp độ câu hỏi, chiếu mã QR điểm danh cả lớp và xuất báo cáo điểm cuối trận.
+                Sa bàn toàn cảnh 6 làn tiến quân, đếm ngược 5 phút toàn trận, quản lý ngân hàng câu hỏi, chiếu mã QR cho cả lớp và xuất Bảng Vinh Danh (MVP, SVP, Top Streak).
               </p>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-[#3b1c20] flex items-center justify-between text-xs text-slate-400">
-            <span className="font-semibold text-slate-300">Tài khoản BTC: admin_nhom6</span>
+          <div className="mt-6 pt-4 border-t border-[#311e1e] flex items-center justify-between text-xs text-slate-400">
+            <span className="font-semibold text-slate-300">Căn cứ Tà Thiết - Lộc Ninh</span>
             <span className="text-red-400 font-black group-hover:translate-x-1 transition-transform flex items-center gap-1">
-              Mở bản đồ tác chiến →
+              Mở Sa Bàn Tác Chiến →
             </span>
           </div>
         </Link>
       </section>
 
       {/* ===================================================
-          QUY TẮC TÁC CHIẾN & THỂ LỆ THI ĐẤU
+          HƯỚNG DẪN TÁC CHIẾN & VẬT PHẨM QUÂN NHU BẢO VỆ
           =================================================== */}
-      <section className="bg-[#141f16]/90 border border-[#2b422e] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
-        <div className="flex items-center gap-2.5 border-b border-[#233526] pb-3">
-          <Target className="w-5 h-5 text-amber-400" />
-          <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wide">
-            Thể Lệ Tác Chiến & Cách Thức Ghi Điểm
-          </h2>
+      <section className="space-y-6">
+        <div className="flex items-center justify-between border-b border-[#233526] pb-3">
+          <div className="flex items-center gap-2.5">
+            <Shield className="w-5 h-5 text-amber-400" />
+            <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wide">
+              Hướng Dẫn Tác Chiến & Kho Quân Nhu Dã Chiến
+            </h2>
+          </div>
+          <span className="text-xs text-slate-400 hidden sm:inline">Quy tắc bảo vệ đồng đội & cạnh tranh Tactics</span>
         </div>
 
+        {/* 3 Quy tắc cốt lõi */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-xl bg-[#0d160e] border border-[#233526] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-red-600/20 text-red-400 flex items-center justify-center font-black text-sm border border-red-600/40">
-              1
+          <div className="p-5 rounded-2xl bg-[#0d160e] border border-[#233526] space-y-2.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-300 font-black">
+              <Users className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-white text-sm">Trả Lời & Đẩy Xe Tăng</h3>
+            <h3 className="font-black text-white text-sm">1. Kíp Lái Xe Tăng Phối Hợp</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Mỗi câu trả lời đúng cộng <strong>100 điểm + (Streak x 20)</strong> và đẩy xe tăng của cánh quân tiến lên <strong>+4%</strong> (hoặc <strong>+8%</strong> nếu có Mệnh lệnh Thần tốc).
+              Mỗi nhóm là một kíp xe tăng T-54. Cùng trả lời trắc nghiệm, tích lũy điểm và chia sẻ chung 1 ô vật phẩm phòng thủ để bảo vệ tiến độ xe tăng.
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0d160e] border border-[#233526] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-sm border border-amber-500/40">
-              2
+          <div className="p-5 rounded-2xl bg-[#0d160e] border border-[#233526] space-y-2.5">
+            <div className="w-10 h-10 rounded-xl bg-red-600/15 border border-red-500/40 flex items-center justify-center text-red-400 font-black">
+              <Clock className="w-5 h-5 text-red-400" />
             </div>
-            <h3 className="font-bold text-white text-sm">Tích Lũy Lệnh Bài</h3>
+            <h3 className="font-black text-white text-sm">2. Trận Đánh 5 Phút • 20s/Câu</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Duy trì chuỗi đúng liên tiếp đạt <strong>Streak 3, 6, 9...</strong> để nhận Lệnh bài chiến thuật: Đường ống Trường Sơn, Lá chắn Trại Davis, Nghi binh Pleiku, Chặn đường số 7.
+              Chiến dịch diễn ra trong 5 phút (300 giây). Mỗi câu hỏi mở trong tối đa 20 giây bằng thao tác chuột nhanh. Hết giờ sẽ lỡ nhịp hỏa lực!
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0d160e] border border-[#233526] space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm border border-emerald-500/40">
-              3
+          <div className="p-5 rounded-2xl bg-[#0d160e] border border-[#233526] space-y-2.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center text-emerald-300 font-black">
+              <Target className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-white text-sm">Cắm Cờ Toàn Thắng</h3>
+            <h3 className="font-black text-white text-sm">3. Địch Phản Kích (Đếm Ngược 1s)</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Cánh quân đầu tiên chạm mốc <strong>100%</strong> sẽ húc đổ cổng Dinh Độc Lập, cắm cờ Giải phóng và giành danh hiệu Vô địch toàn trận.
+              Hỏa lực địch tập trung đánh cánh quân dẫn đầu với các sự kiện lịch sử thật (Xuân Lộc, Buôn Ma Thuột...). Kíp lái phải nhanh tay nhấn Khiên đỡ đòn trong 1s!
             </p>
+          </div>
+        </div>
+
+        {/* Danh sách 4 Vật phẩm bảo vệ trong Chợ Quân Nhu */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-black text-amber-300 text-sm uppercase tracking-wider flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-400" />
+              4 Trang Bị Bảo Vệ Dã Chiến Trong Chợ Quân Nhu (Tactics Draft):
+            </h3>
+            <span className="text-[11px] text-slate-400 italic">Mỗi đội giữ tối đa 1 món chưa dùng</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="p-4 rounded-2xl bg-[#141f16] border border-[#233526] space-y-1.5 hover:border-emerald-500/60 transition-all">
+              <span className="text-2xl">🛡️</span>
+              <h4 className="font-black text-white text-xs">Lá Chắn Trại Davis</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Phòng thủ tuyệt đối: Chặn 100% đòn pháo kích của địch trong 12s, hóa giải hoàn toàn khựng xe và nhận +150đ thưởng phối hợp.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#141f16] border border-[#233526] space-y-1.5 hover:border-amber-500/60 transition-all">
+              <span className="text-2xl">⚡</span>
+              <h4 className="font-black text-white text-xs">Mệnh Lệnh Thần Tốc</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Nhân đôi tốc độ tiến quân (+8% tiến độ) và nhân đôi điểm số khi kíp lái trả lời chính xác câu hỏi tiếp theo.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#141f16] border border-[#233526] space-y-1.5 hover:border-blue-500/60 transition-all">
+              <span className="text-2xl">⛽</span>
+              <h4 className="font-black text-white text-xs">Xăng Dầu Trường Sơn</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Tiếp tế nhiên liệu dã chiến: Tăng vọt +6% tiến độ cho xe tăng ngay lập tức và hóa giải mọi chấn động pháo kích.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#141f16] border border-[#233526] space-y-1.5 hover:border-purple-500/60 transition-all">
+              <span className="text-2xl">🎭</span>
+              <h4 className="font-black text-white text-xs">Nghi Binh Tây Nguyên</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Tung hỏa mù nghi binh đánh lừa phi cơ trinh sát và phân tán hỏa lực đối phương trong 10 giây.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ===================================================
-          6 CÁNH QUÂN THẦN TỐC LỊCH SỬ NĂM 1975
+          DANH SÁCH 6 CÁNH QUÂN LỊCH SỬ THAM GIA THI ĐUA
           =================================================== */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Users className="w-5 h-5 text-amber-400" />
-            <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wide">
-              6 Cánh Quân Lịch Sử (Tương Ứng 6 Nhóm Đua Trong Lớp)
-            </h2>
-          </div>
-          <span className="text-xs text-slate-400 hidden sm:inline">Nhóm 6 là Ban Quản Trò</span>
+        <div className="flex items-center gap-2.5">
+          <Users className="w-5 h-5 text-amber-400" />
+          <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wide">
+            6 Cánh Quân Lịch Sử Tham Gia Chiến Dịch 1975
+          </h2>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
           {INITIAL_TEAMS_CONFIG.map((team) => (
             <div
               key={team.id}
@@ -222,7 +282,7 @@ export const HomePage: React.FC = () => {
 
               <div className="pt-2 border-t border-[#1e2e21] flex items-center justify-between text-[11px] text-slate-400">
                 <span>Vạch xuất kích: 0%</span>
-                <span className="text-emerald-400 font-bold">Sẵn sàng nhận lệnh</span>
+                <span className="text-emerald-400 font-bold">Kíp lái sẵn sàng</span>
               </div>
             </div>
           ))}

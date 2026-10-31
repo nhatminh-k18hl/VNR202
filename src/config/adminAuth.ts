@@ -1,13 +1,13 @@
 /**
- * THẦN TỐC 1975 - CẤU HÌNH ADMIN, 6 CÁNH QUÂN VÀ 5 MỐC LỊCH SỬ SA BÀN
- * Phục vụ thuyết trình Chủ đề 6 môn VNR202 (Đại học FPT)
+ * THẦN TỐC 1975 - CẤU HÌNH ADMIN, 6 CÁNH QUÂN, 5 MỐC LỊCH SỬ & DỮ LIỆU ĐỊCH PHẢN KÍCH THẬT
+ * Thiết kế chuẩn mực cho Sa Bàn Tác Chiến Đại Thắng Mùa Xuân 1975
  */
 
 import { HistoricalMilestone, TeamState } from '../types/game';
 
 export const ADMIN_CONFIG = {
   roleName: 'Chỉ Huy Sở - Bộ Chỉ huy Chiến dịch Hồ Chí Minh',
-  groupName: 'Nhóm 6 (VNR202)',
+  groupName: 'Nhóm 6',
   defaultUsername: import.meta.env.VITE_ADMIN_USERNAME || 'admin_nhom6',
   defaultPassword: import.meta.env.VITE_ADMIN_PASSWORD || '30041975',
 };
@@ -27,6 +27,7 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     totalScore: 0,
     memberCount: 0,
     activeEffects: [],
+    heldItem: null,
   },
   {
     id: 'team_2',
@@ -39,6 +40,7 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     totalScore: 0,
     memberCount: 0,
     activeEffects: [],
+    heldItem: null,
   },
   {
     id: 'team_3',
@@ -51,6 +53,7 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     totalScore: 0,
     memberCount: 0,
     activeEffects: [],
+    heldItem: null,
   },
   {
     id: 'team_4',
@@ -63,6 +66,7 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     totalScore: 0,
     memberCount: 0,
     activeEffects: [],
+    heldItem: null,
   },
   {
     id: 'team_5',
@@ -75,6 +79,7 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     totalScore: 0,
     memberCount: 0,
     activeEffects: [],
+    heldItem: null,
   },
   {
     id: 'team_7',
@@ -87,6 +92,7 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     totalScore: 0,
     memberCount: 0,
     activeEffects: [],
+    heldItem: null,
   },
 ];
 
@@ -96,39 +102,80 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
 export const HISTORICAL_MILESTONES: HistoricalMilestone[] = [
   {
     percentage: 0,
-    title: 'Hiệp Định Paris',
-    subTitle: 'Xuất kích Thần tốc',
-    historicalEvent: '1/1973 - 7/1973: Nghị quyết TW 21 khẳng định con đường bạo lực cách mạng; chuẩn bị mọi mặt cho cuộc Tổng tiến công mùa Xuân 1975.',
+    title: 'Hội Nghị TW 21',
+    subTitle: 'Con đường bạo lực cách mạng',
+    historicalEvent: 'Tháng 7/1973: Nghị quyết 21 xác định tiếp tục con đường bạo lực cách mạng, kiên quyết phản công và tiến công địch.',
   },
   {
     percentage: 25,
-    title: 'Giải Phóng Phước Long',
+    title: 'Đường 14 - Phước Long',
     subTitle: 'Đòn trinh sát chiến lược',
-    historicalEvent: '6/1/1975: Chiến thắng Phước Long chứng minh sức mạnh áp đảo của quân ta và khả năng Mỹ không thể tái can thiệp bằng quân sự.',
+    historicalEvent: 'Tháng 1/1975: Giải phóng hoàn toàn tỉnh Phước Long. Khẳng định khả năng suy sụp của quân đội Sài Gòn và sự bất lực của Mỹ.',
   },
   {
     percentage: 50,
     title: 'Buôn Ma Thuột',
-    subTitle: 'Đòn điểm huyệt Tây Nguyên',
-    historicalEvent: '10/3/1975: Đòn giáng sấm sét giải phóng Buôn Ma Thuột, đẩy quân ngụy vào cuộc tháo chạy hoảng loạn trên Đường số 7.',
+    subTitle: 'Đột phá khẩu Tây Nguyên',
+    historicalEvent: '10-11/3/1975: Đòn điểm huyệt hiểm hóc giải phóng Buôn Ma Thuột, làm rung chuyển toàn bộ chiến trường và mở toang cánh cửa Tây Nguyên.',
   },
   {
     percentage: 75,
     title: 'Huế - Đà Nẵng',
-    subTitle: 'Đập tan căn cứ liên hợp',
-    historicalEvent: '26/3 - 29/3/1975: Giải phóng Huế, quét sạch căn cứ quân sự liên hợp khổng lồ tại Đà Nẵng, mở toang cửa ngõ tiến về Sài Gòn.',
+    subTitle: 'Thần tốc tiến về phương Nam',
+    historicalEvent: '26-29/3/1975: Đập tan căn cứ liên hợp quân sự khổng lồ của địch tại miền Trung, tạo thế áp đảo tuyệt đối để giải phóng Sài Gòn.',
   },
   {
     percentage: 100,
     title: 'Dinh Độc Lập',
-    subTitle: 'Đại thắng 30/4/1975',
-    historicalEvent: '11h30 ngày 30/4/1975: Xe tăng 390 và 843 húc đổ cổng Dinh Độc Lập, cắm cờ Giải phóng. Non sông Việt Nam hoàn toàn thu về một mối!',
+    subTitle: 'Toàn thắng 30/4/1975',
+    historicalEvent: '11h30 ngày 30/4/1975: Xe tăng húc đổ cổng Dinh Độc Lập, cắm cờ Giải phóng trên nóc Dinh. Chiến dịch Hồ Chí Minh toàn thắng!',
   },
 ];
 
-export function verifyAdminCredentials(username: string, password: string): boolean {
-  const expectedUser = (import.meta.env.VITE_ADMIN_USERNAME || 'admin_nhom6').trim();
-  const expectedPass = (import.meta.env.VITE_ADMIN_PASSWORD || '30041975').trim();
+/**
+ * DỮ LIỆU ĐỊCH PHẢN KÍCH LỊCH SỬ THẬT 1975 (AUTHENTIC ENEMY COUNTER-ATTACKS)
+ * Nhắm vào cánh quân dẫn đầu theo các mốc tiến độ
+ */
+export const HISTORICAL_ENEMY_ATTACKS = [
+  {
+    minProgress: 10,
+    maxProgress: 35,
+    historicalEventName: 'Phản kích Đèo Chu Pao (Chiến dịch Tây Nguyên)',
+    historicalDetail: 'Quân đoàn 2 VNCH điều Trung đoàn 44, 45 cùng pháo binh nã đạn cản đường tiến quân của ta!',
+  },
+  {
+    minProgress: 35,
+    maxProgress: 55,
+    historicalEventName: 'Không kích Phước An - Nông Trại (Buôn Ma Thuột)',
+    historicalDetail: 'Trực thăng và phi cơ A-37 thuộc Sư đoàn 6 Không quân địch ném bom phản kích đội hình thọc sâu!',
+  },
+  {
+    minProgress: 55,
+    maxProgress: 75,
+    historicalEventName: 'Lá Chắn Thép Phan Rang (Tuyến phòng thủ từ xa)',
+    historicalDetail: 'Bộ Tổng tham mưu Sài Gòn lập phòng tuyến Phan Rang do tướng Nguyễn Vĩnh Nghi chỉ huy dội pháo chặn đường!',
+  },
+  {
+    minProgress: 75,
+    maxProgress: 90,
+    historicalEventName: 'Tử Chiến Cánh Cửa Thép Xuân Lộc',
+    historicalDetail: 'Sư đoàn 18 VNCH (Lê Minh Đảo) điên cuồng ném bom CBU-55 và đại bác tử thủ bảo vệ cửa ngõ Sài Gòn!',
+  },
+  {
+    minProgress: 90,
+    maxProgress: 100,
+    historicalEventName: 'Tử Thủ Cầu Rạch Chiếc & Cửa Ngõ Nội Đô',
+    historicalDetail: 'Lữ đoàn 3 kỵ binh thiết giáp và lính dù địch phục kích tại đầu cầu hòng chặn xe tăng lao vào Dinh Độc Lập!',
+  },
+];
 
-  return username.trim() === expectedUser && password.trim() === expectedPass;
+/**
+ * Xác thực thông tin đăng nhập Admin
+ */
+export function verifyAdminCredentials(username?: string, password?: string): boolean {
+  if (!username || !password) return false;
+  return (
+    username.trim() === ADMIN_CONFIG.defaultUsername &&
+    password.trim() === ADMIN_CONFIG.defaultPassword
+  );
 }

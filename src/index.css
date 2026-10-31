@@ -8,6 +8,7 @@
     color-scheme: dark;
   }
 
+  /* CHẾ ĐỘ TỐI (DARK MODE - SA BÀN TÁC CHIẾN ĐÊM) */
   body {
     margin: 0;
     min-width: 320px;
@@ -21,10 +22,51 @@
     background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
     background-attachment: fixed;
     color: #f8fafc;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* CHẾ ĐỘ SÁNG (LIGHT MODE - BẢN ĐỒ TÁC CHIẾN GIẤY RÁP / SA BÀN BAN NGÀY) */
+  html.light body {
+    background-color: #f7f4ec;
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(185, 28, 28, 0.08) 0%, transparent 70%),
+      radial-gradient(circle 600px at 100% 100%, rgba(180, 83, 9, 0.05) 0%, transparent 60%),
+      linear-gradient(rgba(43, 66, 46, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(43, 66, 46, 0.04) 1px, transparent 1px);
+    color: #1a271c;
+    color-scheme: light;
   }
 }
 
-/* Hiệu ứng rung màn hình khi dính Nghi binh Pleiku */
+/* Light mode overrides for military cards */
+html.light .bg-\[\#0c140d\] {
+  background-color: #ede7d8 !important;
+}
+html.light .bg-\[\#0d160e\] {
+  background-color: #f2ece0 !important;
+}
+html.light .bg-\[\#141f16\] {
+  background-color: #fbf7ee !important;
+}
+html.light .bg-\[\#162218\] {
+  background-color: #e9e2d1 !important;
+}
+html.light .border-\[\#233526\],
+html.light .border-\[\#2b422e\],
+html.light .border-\[\#1e2e21\] {
+  border-color: #d1c8b2 !important;
+}
+html.light .text-slate-400 {
+  color: #556957 !important;
+}
+html.light .text-slate-300 {
+  color: #2c3e2e !important;
+}
+html.light .text-white {
+  color: #121c13 !important;
+}
+
+/* Rung màn hình khi dính chấn động pháo kích */
 @keyframes battlefield-shake {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
   20% { transform: translate(-3px, 2px) rotate(-1deg); }
@@ -37,7 +79,19 @@
   animation: battlefield-shake 0.4s ease-in-out infinite;
 }
 
-/* Con dấu quân sự đỏ retro (Military Red Seal) */
+/* Rung giật xóc nảy xe tăng hành quân */
+@keyframes tankRumble {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+
+/* Địa hình đất đỏ Trường Sơn di chuyển dưới gầm xe */
+@keyframes moveTerrain {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Con dấu quân sự đỏ dã chiến */
 .military-stamp {
   border: 2px dashed #dc2626;
   color: #ef4444;
@@ -58,9 +112,17 @@
   background: #090e0a;
 }
 
+html.light ::-webkit-scrollbar-track {
+  background: #e6dfcf;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #233425;
   border-radius: 4px;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #b8af97;
 }
 
 ::-webkit-scrollbar-thumb:hover {
