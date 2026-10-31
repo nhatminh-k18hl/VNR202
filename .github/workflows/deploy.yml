@@ -1,0 +1,53 @@
+name: Deploy "Thần Tốc 1975" to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Quyền hạn cấp cho GITHUB_TOKEN để triển khai lên GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Chỉ cho phép một deployment chạy cùng một lúc
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài đặt Node.js môi trường build
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Cài đặt dependencies
+        run: npm ci
+
+      - name: Xây dựng dự án (Build)
+        run: npm run build
+
+      - name: Cấu hình GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Nén và tải lên artifact từ thư mục ./dist
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Triển khai lên GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
