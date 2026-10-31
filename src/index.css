@@ -1,130 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color-scheme: dark;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  /* CHẾ ĐỘ TỐI (DARK MODE - SA BÀN TÁC CHIẾN ĐÊM) */
+  /* Light mode mặc định nền ấm, sạch sẽ, chuẩn Taste Skill */
   body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
-    background-color: #0c140d;
+    background-color: #f8f9fa;
     background-image: 
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(185, 28, 28, 0.22) 0%, transparent 70%),
-      radial-gradient(circle 600px at 100% 100%, rgba(217, 119, 6, 0.08) 0%, transparent 60%),
-      linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(185, 28, 28, 0.08) 0%, transparent 60%),
+      linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 32px 32px, 32px 32px;
     background-attachment: fixed;
-    color: #f8fafc;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    color: #1e293b;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
-  /* CHẾ ĐỘ SÁNG (LIGHT MODE - BẢN ĐỒ TÁC CHIẾN GIẤY RÁP / SA BÀN BAN NGÀY) */
-  html.light body {
-    background-color: #f7f4ec;
+  /* Dark mode phong cách sa bàn chiến thuật tối màu tinh tế */
+  html.dark body {
+    background-color: #0c120e;
     background-image: 
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(185, 28, 28, 0.08) 0%, transparent 70%),
-      radial-gradient(circle 600px at 100% 100%, rgba(180, 83, 9, 0.05) 0%, transparent 60%),
-      linear-gradient(rgba(43, 66, 46, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(43, 66, 46, 0.04) 1px, transparent 1px);
-    color: #1a271c;
-    color-scheme: light;
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(185, 28, 28, 0.15) 0%, transparent 70%),
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 32px 32px, 32px 32px;
+    color: #f1f5f9;
   }
 }
 
-/* Light mode overrides for military cards */
-html.light .bg-\[\#0c140d\] {
-  background-color: #ede7d8 !important;
-}
-html.light .bg-\[\#0d160e\] {
-  background-color: #f2ece0 !important;
-}
-html.light .bg-\[\#141f16\] {
-  background-color: #fbf7ee !important;
-}
-html.light .bg-\[\#162218\] {
-  background-color: #e9e2d1 !important;
-}
-html.light .border-\[\#233526\],
-html.light .border-\[\#2b422e\],
-html.light .border-\[\#1e2e21\] {
-  border-color: #d1c8b2 !important;
-}
-html.light .text-slate-400 {
-  color: #556957 !important;
-}
-html.light .text-slate-300 {
-  color: #2c3e2e !important;
-}
-html.light .text-white {
-  color: #121c13 !important;
-}
-
-/* Rung màn hình khi dính chấn động pháo kích */
+/* Hiệu ứng rung chiến trường khi bị tập kích hoặc pháo kích */
 @keyframes battlefield-shake {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  20% { transform: translate(-3px, 2px) rotate(-1deg); }
-  40% { transform: translate(3px, -2px) rotate(1deg); }
-  60% { transform: translate(-2px, -2px) rotate(0.5deg); }
-  80% { transform: translate(2px, 2px) rotate(-0.5deg); }
+  20% { transform: translate(-3px, 2px) rotate(-0.8deg); }
+  40% { transform: translate(3px, -2px) rotate(0.8deg); }
+  60% { transform: translate(-2px, -2px) rotate(0.4deg); }
+  80% { transform: translate(2px, 2px) rotate(-0.4deg); }
 }
 
 .shake-active {
-  animation: battlefield-shake 0.4s ease-in-out infinite;
+  animation: battlefield-shake 0.35s ease-in-out infinite;
 }
 
-/* Rung giật xóc nảy xe tăng hành quân */
-@keyframes tankRumble {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-1.5px); }
+/* Hiệu ứng mờ mắt kíp lái do chấn động đạn pháo (Shell-Shock) */
+.shell-shocked {
+  filter: blur(4px);
+  user-select: none;
+  pointer-events: none;
+  transition: filter 1.5s ease-out;
 }
 
-/* Địa hình đất đỏ Trường Sơn di chuyển dưới gầm xe */
-@keyframes moveTerrain {
+/* Hiệu ứng mặt đất / vệt địa hình di chuyển dưới gầm xe tăng */
+@keyframes move-ground {
   0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  100% { transform: translateX(-40px); }
 }
 
-/* Con dấu quân sự đỏ dã chiến */
-.military-stamp {
-  border: 2px dashed #dc2626;
-  color: #ef4444;
-  text-transform: uppercase;
-  font-weight: 900;
-  letter-spacing: 0.15em;
-  transform: rotate(-3deg);
-  display: inline-block;
+.tank-ground-moving {
+  animation: move-ground 0.8s linear infinite;
 }
 
-/* Scrollbar quân đội */
+/* Scrollbar tinh chỉnh theo theme */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090e0a;
-}
-
-html.light ::-webkit-scrollbar-track {
-  background: #e6dfcf;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #233425;
-  border-radius: 4px;
+  background: rgba(100, 116, 139, 0.25);
+  border-radius: 9999px;
 }
 
-html.light ::-webkit-scrollbar-thumb {
-  background: #b8af97;
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #364e39;
+  background: rgba(100, 116, 139, 0.4);
 }

@@ -3,7 +3,7 @@
  * Tự động tính toán MVP đội thắng, SVP từng đội thua, Top Streak, Top Điểm & Xuất CSV
  */
 
-import { GameSummaryStats, PlayerState, TeamId, TeamMvpInfo, TeamState } from '../types/game';
+import { BoostItem, GameSummaryStats, PlayerState, TeamId, TeamMvpInfo, TeamState } from '../types/game';
 
 /**
  * Tìm chiến sĩ xuất sắc nhất (MVP) trong một nhóm người chơi cụ thể
@@ -54,9 +54,10 @@ export function getTopScorePlayers(players: PlayerState[], limit: number = 10): 
 export function calculateGameSummaryStats(
   players: PlayerState[],
   teams: TeamState[],
-  winningTeamId?: TeamId
+  winningTeamId?: TeamId,
+  discoveredEasterEggs: BoostItem[] = []
 ): GameSummaryStats {
-  // 1. Xếp hạng 6 Đội (Team Podium): Ưu tiên đội 100%, sau đó theo tiến độ % và tổng điểm
+  // 1. Xếp hạng 6 Đội (Team Podium)
   const teamRankings = [...teams].sort((a, b) => {
     if (b.progress !== a.progress) return b.progress - a.progress;
     return b.totalScore - a.totalScore;
@@ -100,6 +101,7 @@ export function calculateGameSummaryStats(
     topStreakPlayers,
     topScorePlayers,
     teamRankings,
+    discoveredEasterEggs,
   };
 }
 
@@ -109,7 +111,7 @@ export function calculateGameSummaryStats(
 export function exportPlayersToCSV(players: PlayerState[], teams: TeamState[]) {
   const teamMap = new Map(teams.map((t) => [t.id, `${t.name} - ${t.corpsName}`]));
 
-  const headers = ['Hạng', 'Họ và Tên', 'MSSV', 'Cánh Quân / Nhóm', 'Điểm Số', 'Chuỗi Đúng Kỷ Lục', 'Số Câu Đúng', 'Tổng Câu Trả Lời', 'Tỷ Lệ Đúng (%)'];
+  const headers = ['Hạng', 'Họ và Tên', 'MSSV', 'Cánh Quân / Nhóm', 'Vai Trò Kíp Lái', 'Điểm Số', 'Chuỗi Đúng Kỷ Lục', 'Số Câu Đúng', 'Tổng Câu Trả Lời', 'Tỷ Lệ Đúng (%)'];
 
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
@@ -120,6 +122,7 @@ export function exportPlayersToCSV(players: PlayerState[], teams: TeamState[]) {
       `"${p.name}"`,
       `"${p.studentCode || 'N/A'}"`,
       `"${teamMap.get(p.teamId) || p.teamId}"`,
+      `"${p.role || 'Kíp lái'}"`,
       p.score,
       p.maxStreak,
       p.correctCount,

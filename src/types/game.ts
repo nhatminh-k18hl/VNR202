@@ -1,6 +1,6 @@
 /**
  * THẦN TỐC 1975 - HỆ THỐNG ĐỊNH NGHĨA DỮ LIỆU ĐẦY ĐỦ (GAME TYPES)
- * Thiết kế cho Sa Bàn Tác Chiến Đại Thắng Mùa Xuân 1975
+ * Thiết kế theo cơ chế Co-op Kíp Lái Xe Tăng & PvE Địch Phản Kích Lịch Sử
  */
 
 export interface QuestionOptions {
@@ -21,28 +21,32 @@ export interface Question {
 }
 
 /**
- * 6 Đội đua tham gia chiến dịch
+ * 6 Đội đua tham gia chiến dịch (5 Cánh quân + Cánh quân thứ 6)
  */
 export type TeamId = 'team_1' | 'team_2' | 'team_3' | 'team_4' | 'team_5' | 'team_7';
 
 /**
- * Vai trò trong Kíp Lái Xe Tăng (Tank Crew Roles)
+ * Các vị trí trong kíp lái xe tăng (Co-op Tank Crew Role)
  */
-export type CrewRole = 
-  | 'COMMANDER'  // Trưởng xe: Quyết định kích hoạt Khiên & Lệnh Thần Tốc
-  | 'DRIVER'     // Lái xe: Giữ vững tay lái, vượt địa hình
-  | 'GUNNER'     // Pháo thủ: Ngắm bắn đáp án chính xác
-  | 'LOADER'     // Tiếp đạn & Quân nhu: Tranh giành vật phẩm Chợ Quân Nhu
-  | 'RADIO';     // Báo vụ: Cảnh báo sớm pháo kích địch
+export type CrewRole = 'COMMANDER' | 'GUNNER' | 'DRIVER' | 'LOADER' | 'RADIO';
+
+export interface CrewRoleInfo {
+  role: CrewRole;
+  title: string;
+  badge: string;
+  description: string;
+}
 
 /**
- * 4 Loại Vật phẩm Chiến thuật Phòng Thủ & Tác Chiến Dã Chiến (Không đánh lẫn nhau)
+ * Danh mục Vật phẩm Chiến thuật (Tactical Items - Thiên về Hỗ trợ & Phòng ngự Kíp Lái)
  */
 export type ItemType =
-  | 'DAVIS_SHIELD'      // 🛡️ Lá chắn Trại Davis (Phòng thủ tuyệt đối: Chặn 100% đòn phản kích của địch)
-  | 'PLEIKU_DECEPTION'  // 🎭 Nghi binh Tây Nguyên (Hóa giải không kích & phân tán hỏa lực địch)
-  | 'SPEED_ORDER'       // ⚡ Mệnh lệnh Thần tốc (Nhân đôi tốc độ tiến quân và điểm số câu tiếp theo)
-  | 'TRUONG_SON_PIPE';  // ⛽ Xăng dầu Trường Sơn (Hồi phục nhiên liệu, tiến ngay +6% và hóa giải khựng)
+  | 'DAVIS_SHIELD'            // 🛡️ Lá chắn Trại Davis (Đỡ 1 đòn pháo kích của địch)
+  | 'TRUONG_SON_LOGISTICS'    // ⛽ Tiếp viện Trường Sơn (+5% tiến độ thần tốc)
+  | 'RAPID_DISPATCH'          // ⚡ Mệnh lệnh Thần tốc (x2 điểm câu tiếp, nhưng sai bị phạt -10%)
+  | 'SMOKE_SCREEN'            // 💨 Màn khói ngụy trang (Hóa giải choáng ngợp & miễn nhiễm 5s)
+  | 'EASTER_COMMUNICATION_CODE' // 📻 [Easter Egg] Bản Mật Mã Cơ Yếu (Loại bỏ 2 đáp án sai)
+  | 'EASTER_VICTORY_BANNER';   // 🚩 [Easter Egg] Cờ Quyết Chiến Quyết Thắng (+100đ toàn đội)
 
 export interface BoostItem {
   id: string;
@@ -50,41 +54,36 @@ export interface BoostItem {
   name: string;
   description: string;
   icon: string;
+  isEasterEgg?: boolean;
   acquiredAt: number;
 }
 
 /**
- * Vật phẩm trong Chợ Quân Nhu Dã Chiến (Tactics Draft Market)
- * Cơ chế giống Auto Chess: số lượng giới hạn, các đội tranh nhau nhặt/mua
+ * Hòm Tiếp Viện Dã Chiến (Supply Draft Pool - Cơ chế Giành Đồ / Trưng dụng chiến thuật)
  */
-export interface TacticsMarketItem {
+export interface SupplyDraftItem {
   id: string;
-  type: ItemType;
-  name: string;
-  description: string;
-  icon: string;
-  stock: number; // 0 hoặc 1
+  item: BoostItem;
+  createdAt: number;
+  expiresAt: number;
   claimedByTeamId?: TeamId;
-  claimedByTeamName?: string;
   claimedByPlayerName?: string;
 }
 
 /**
- * Đợt Địch Phản Kích (Boss Counter-Attack) với Dữ Liệu Lịch Sử Thật
+ * Sự kiện Địch Phản Kích (PvE Historical Counter-Attack Target)
  */
 export interface EnemyCounterAttack {
   id: string;
-  targetTeamId: TeamId;
+  eventName: string;         // Tên sự kiện lịch sử có thật (VD: "Phòng tuyến thép Xuân Lộc phản kích")
+  historicalDetail: string;  // Chi tiết lịch sử chân thực
+  targetTeamId: TeamId;      // Mục tiêu: Luôn ngắm vào đội dẫn đầu
   targetTeamName: string;
-  historicalEventName: string; // Tên chiến sự thật 1975
-  historicalDetail: string;    // Chi tiết bối cảnh lịch sử
-  issuedAt: number;
-  countdownMs: number;         // 1000ms đếm ngược
-  remainingMs: number;
-  isDefended: boolean;
-  isResolved: boolean;
-  defenderName?: string;
-  usedItemType?: ItemType;
+  countdownSeconds: number;  // 3s -> 2s -> 1s cảnh báo trước khi trúng đạn
+  totalWarningSeconds: number;
+  initiatedAt: number;
+  strikesAt: number;
+  status: 'WARNING' | 'DEFENDED' | 'HIT';
 }
 
 export interface ActiveEffect {
@@ -93,8 +92,7 @@ export interface ActiveEffect {
   name: string;
   appliedAt: number;
   expiresAt: number;
-  targetTeamId: TeamId;
-  sourceTeamId: TeamId;
+  teamId: TeamId;
   sourcePlayerName: string;
 }
 
@@ -104,12 +102,14 @@ export interface TeamState {
   corpsName: string;      // Tên cánh quân lịch sử 1975
   axisName: string;       // Hướng tiến công lịch sử
   tankNumber: string;     // Số hiệu xe tăng tiêu biểu (390, 843,...)
-  color: string;          // Màu nhận diện trên sa bàn
+  color: string;          // Màu nhận diện
   progress: number;       // Tiến độ tiến quân: 0% -> 100%
   totalScore: number;     // Tổng điểm tích lũy toàn đội
-  memberCount: number;    // Số chiến sĩ tham gia
-  activeEffects: ActiveEffect[]; // Các hiệu ứng đang tác động lên xe tăng
-  heldItem: BoostItem | null;    // Quy tắc: Mỗi đội chỉ giữ tối đa 1 vật phẩm chưa dùng!
+  memberCount: number;    // Số chiến sĩ kíp lái
+  hasShield: boolean;     // Đang bật Khiên Trại Davis chống pháo kích
+  shieldCount: number;    // Số lần đỡ đòn còn lại (mặc định 1 lần/khiên)
+  activeEffects: ActiveEffect[];
+  isUnderAttack?: boolean; // Đang bị địch ngắm bắn
 }
 
 export interface PlayerState {
@@ -117,19 +117,22 @@ export interface PlayerState {
   name: string;
   studentCode?: string;
   teamId: TeamId;
-  crewRole?: CrewRole;
+  role: CrewRole;
   score: number;
   currentStreak: number;
   maxStreak: number;
   correctCount: number;
   totalAnswered: number;
-  inventory: BoostItem[];
-  isSpeedBoostActive?: boolean;
+  inventory: BoostItem[];    // Tối đa mỗi đội chỉ có 1 món cùng loại
+  isSpeedBoostActive?: boolean; // Mệnh lệnh Thần tốc x2 điểm đang kích hoạt
+  isShellShocked?: boolean;     // Kíp lái bị choáng váng do trúng đạn (mờ câu hỏi 1-2s)
+  shellShockExpiresAt?: number;
+  eliminatedOptions?: AnswerKey[]; // Đáp án bị loại bỏ bởi Easter Egg Mật Mã Cơ Yếu
   isBot?: boolean;
 }
 
 export interface HistoricalMilestone {
-  percentage: number; // 0, 25, 50, 75, 100
+  percentage: number;
   title: string;
   subTitle: string;
   historicalEvent: string;
@@ -144,17 +147,15 @@ export interface RoomState {
   winnerTeamId?: TeamId | null;
   firebaseDbUrl?: string;
   isBotActive: boolean;
-  currentQuestionId?: string | number;
-  remainingSeconds: number; // Đếm ngược 5 phút (300s)
-  activeEnemyAttack: EnemyCounterAttack | null;
-  tacticsMarket: TacticsMarketItem[];
+  matchDurationSeconds: number; // Mặc định 300s (5 phút)
+  timeRemainingSeconds: number; // Thời gian trận đấu còn lại
 }
 
 export interface LiveBattleEvent {
   id: string;
   timestamp: number;
   message: string;
-  type: 'boost' | 'attack' | 'progress' | 'streak' | 'finish' | 'info' | 'enemy';
+  type: 'boost' | 'attack' | 'progress' | 'streak' | 'finish' | 'info' | 'easter_egg' | 'defense';
   teamId?: TeamId;
   playerName?: string;
 }
@@ -173,4 +174,5 @@ export interface GameSummaryStats {
   topStreakPlayers: PlayerState[];
   topScorePlayers: PlayerState[];
   teamRankings: TeamState[];
+  discoveredEasterEggs: BoostItem[];
 }

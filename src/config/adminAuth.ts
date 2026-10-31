@@ -1,16 +1,52 @@
 /**
- * THẦN TỐC 1975 - CẤU HÌNH ADMIN, 6 CÁNH QUÂN, 5 MỐC LỊCH SỬ & DỮ LIỆU ĐỊCH PHẢN KÍCH THẬT
- * Thiết kế chuẩn mực cho Sa Bàn Tác Chiến Đại Thắng Mùa Xuân 1975
+ * THẦN TỐC 1975 - CẤU HÌNH ADMIN, 6 CÁNH QUÂN, KÍP LÁI VÀ SỰ KIỆN LỊCH SỬ CHÂN THỰC
+ * Phục vụ thuyết trình Chủ đề 6 môn VNR202 (Đại học FPT)
  */
 
-import { HistoricalMilestone, TeamState } from '../types/game';
+import { BoostItem, CrewRoleInfo, HistoricalMilestone, TeamState } from '../types/game';
 
 export const ADMIN_CONFIG = {
   roleName: 'Chỉ Huy Sở - Bộ Chỉ huy Chiến dịch Hồ Chí Minh',
-  groupName: 'Nhóm 6',
+  groupName: 'Nhóm 6 (VNR202)',
   defaultUsername: import.meta.env.VITE_ADMIN_USERNAME || 'admin_nhom6',
   defaultPassword: import.meta.env.VITE_ADMIN_PASSWORD || '30041975',
 };
+
+/**
+ * 5 Vị trí Kíp lái xe tăng (Co-op Tank Crew)
+ */
+export const CREW_ROLES: CrewRoleInfo[] = [
+  {
+    role: 'COMMANDER',
+    title: 'Trưởng xe',
+    badge: '⭐',
+    description: 'Chỉ huy kíp xe, quyết định thời điểm kích hoạt Lá chắn Trại Davis để bảo vệ xe.',
+  },
+  {
+    role: 'GUNNER',
+    title: 'Pháo thủ',
+    badge: '🎯',
+    description: 'Ngắm bắn mục tiêu trắc nghiệm chuẩn xác, duy trì chuỗi Streak rực lửa.',
+  },
+  {
+    role: 'DRIVER',
+    title: 'Lái xe',
+    badge: '🚀',
+    description: 'Thần tốc vượt địa hình, đạp ga đưa xe tăng vượt qua các điểm chốt.',
+  },
+  {
+    role: 'LOADER',
+    title: 'Nạp đạn',
+    badge: '⚡',
+    description: 'Bảo đảm hỏa lực liên tục, chuẩn bị cho các đợt bứt phá điểm số x2.',
+  },
+  {
+    role: 'RADIO',
+    title: 'Thông tin',
+    badge: '📻',
+    description: 'Bắt sóng chỉ huy, cảnh báo sớm các đợt tập kích pháo của đối phương.',
+  },
+];
 
 /**
  * Danh sách 6 Đội đua đại diện 6 cánh quân lịch sử
@@ -22,12 +58,13 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     corpsName: 'Quân đoàn 1 - Binh đoàn Quyết Thắng',
     axisName: 'Cánh quân hướng Bắc',
     tankNumber: '843',
-    color: '#EF4444', // Red
+    color: '#DC2626', // Red
     progress: 0,
     totalScore: 0,
     memberCount: 0,
+    hasShield: false,
+    shieldCount: 0,
     activeEffects: [],
-    heldItem: null,
   },
   {
     id: 'team_2',
@@ -35,12 +72,13 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     corpsName: 'Quân đoàn 2 - Binh đoàn Hương Giang',
     axisName: 'Cánh quân hướng Đông Nam',
     tankNumber: '390',
-    color: '#3B82F6', // Blue
+    color: '#2563EB', // Blue
     progress: 0,
     totalScore: 0,
     memberCount: 0,
+    hasShield: false,
+    shieldCount: 0,
     activeEffects: [],
-    heldItem: null,
   },
   {
     id: 'team_3',
@@ -48,12 +86,13 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     corpsName: 'Quân đoàn 3 - Binh đoàn Tây Nguyên',
     axisName: 'Cánh quân hướng Tây Bắc',
     tankNumber: '985',
-    color: '#10B981', // Emerald
+    color: '#059669', // Emerald
     progress: 0,
     totalScore: 0,
     memberCount: 0,
+    hasShield: false,
+    shieldCount: 0,
     activeEffects: [],
-    heldItem: null,
   },
   {
     id: 'team_4',
@@ -61,12 +100,13 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     corpsName: 'Quân đoàn 4 - Binh đoàn Cửu Long',
     axisName: 'Cánh quân hướng Đông',
     tankNumber: '707',
-    color: '#F59E0B', // Amber
+    color: '#D97706', // Amber
     progress: 0,
     totalScore: 0,
     memberCount: 0,
+    hasShield: false,
+    shieldCount: 0,
     activeEffects: [],
-    heldItem: null,
   },
   {
     id: 'team_5',
@@ -74,12 +114,13 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     corpsName: 'Đoàn 232 & Biệt động Sài Gòn',
     axisName: 'Cánh quân hướng Tây Nam',
     tankNumber: '256',
-    color: '#8B5CF6', // Purple
+    color: '#7C3AED', // Purple
     progress: 0,
     totalScore: 0,
     memberCount: 0,
+    hasShield: false,
+    shieldCount: 0,
     activeEffects: [],
-    heldItem: null,
   },
   {
     id: 'team_7',
@@ -87,12 +128,13 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     corpsName: 'Cánh quân thứ 6 - Hải quân Trường Sa & Phi đội A-37',
     axisName: 'Mũi đột kích nội đô, Biển đảo & Đường không',
     tankNumber: '112',
-    color: '#06B6D4', // Cyan
+    color: '#0891B2', // Cyan
     progress: 0,
     totalScore: 0,
     memberCount: 0,
+    hasShield: false,
+    shieldCount: 0,
     activeEffects: [],
-    heldItem: null,
   },
 ];
 
@@ -102,80 +144,109 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
 export const HISTORICAL_MILESTONES: HistoricalMilestone[] = [
   {
     percentage: 0,
-    title: 'Hội Nghị TW 21',
-    subTitle: 'Con đường bạo lực cách mạng',
-    historicalEvent: 'Tháng 7/1973: Nghị quyết 21 xác định tiếp tục con đường bạo lực cách mạng, kiên quyết phản công và tiến công địch.',
+    title: 'Hiệp Định Paris',
+    subTitle: 'Xuất kích Thần tốc',
+    historicalEvent: '1/1973 - 7/1973: Nghị quyết TW 21 khẳng định con đường cách mạng bạo lực; chuẩn bị tổng lực cho mùa Xuân 1975.',
   },
   {
     percentage: 25,
-    title: 'Đường 14 - Phước Long',
+    title: 'Giải Phóng Phước Long',
     subTitle: 'Đòn trinh sát chiến lược',
-    historicalEvent: 'Tháng 1/1975: Giải phóng hoàn toàn tỉnh Phước Long. Khẳng định khả năng suy sụp của quân đội Sài Gòn và sự bất lực của Mỹ.',
+    historicalEvent: '6/1/1975: Chiến thắng Phước Long chứng minh thế áp đảo và khả năng can thiệp trở lại của Mỹ bị triệt tiêu.',
   },
   {
     percentage: 50,
     title: 'Buôn Ma Thuột',
-    subTitle: 'Đột phá khẩu Tây Nguyên',
-    historicalEvent: '10-11/3/1975: Đòn điểm huyệt hiểm hóc giải phóng Buôn Ma Thuột, làm rung chuyển toàn bộ chiến trường và mở toang cánh cửa Tây Nguyên.',
+    subTitle: 'Đòn điểm huyệt Tây Nguyên',
+    historicalEvent: '10/3/1975: Đòn giáng sấm sét giải phóng Buôn Ma Thuột, đẩy quân ngụy vào cuộc tháo chạy hỗn loạn trên Đường số 7.',
   },
   {
     percentage: 75,
     title: 'Huế - Đà Nẵng',
-    subTitle: 'Thần tốc tiến về phương Nam',
-    historicalEvent: '26-29/3/1975: Đập tan căn cứ liên hợp quân sự khổng lồ của địch tại miền Trung, tạo thế áp đảo tuyệt đối để giải phóng Sài Gòn.',
+    subTitle: 'Đập tan căn cứ liên hợp',
+    historicalEvent: '26/3 - 29/3/1975: Quét sạch căn cứ quân sự liên hợp khổng lồ tại Đà Nẵng, mở toang cửa ngõ tiến về Sài Gòn.',
   },
   {
     percentage: 100,
     title: 'Dinh Độc Lập',
-    subTitle: 'Toàn thắng 30/4/1975',
-    historicalEvent: '11h30 ngày 30/4/1975: Xe tăng húc đổ cổng Dinh Độc Lập, cắm cờ Giải phóng trên nóc Dinh. Chiến dịch Hồ Chí Minh toàn thắng!',
+    subTitle: 'Đại thắng 30/4/1975',
+    historicalEvent: '11h30 ngày 30/4/1975: Xe tăng 390 và 843 húc đổ cổng Dinh Độc Lập, cắm cờ Giải phóng. Non sông toàn thắng!',
   },
 ];
 
 /**
- * DỮ LIỆU ĐỊCH PHẢN KÍCH LỊCH SỬ THẬT 1975 (AUTHENTIC ENEMY COUNTER-ATTACKS)
- * Nhắm vào cánh quân dẫn đầu theo các mốc tiến độ
+ * Sự kiện Địch Phản Kích Lịch Sử (Real Historical Counter-Attacks)
  */
-export const HISTORICAL_ENEMY_ATTACKS = [
+export const HISTORICAL_COUNTER_ATTACKS = [
   {
-    minProgress: 10,
-    maxProgress: 35,
-    historicalEventName: 'Phản kích Đèo Chu Pao (Chiến dịch Tây Nguyên)',
-    historicalDetail: 'Quân đoàn 2 VNCH điều Trung đoàn 44, 45 cùng pháo binh nã đạn cản đường tiến quân của ta!',
+    eventName: 'Tử thủ phòng tuyến ngã ba Dầu Giây - Xuân Lộc',
+    historicalDetail: 'Sư đoàn 18 VNCH tử thủ quyết liệt tại cánh cửa thép ngõ phía Đông, tập trung hỏa lực pháo binh và không quân phản kích.',
   },
   {
-    minProgress: 35,
-    maxProgress: 55,
-    historicalEventName: 'Không kích Phước An - Nông Trại (Buôn Ma Thuột)',
-    historicalDetail: 'Trực thăng và phi cơ A-37 thuộc Sư đoàn 6 Không quân địch ném bom phản kích đội hình thọc sâu!',
+    eventName: 'Pháo binh đối phương phản kích tại Đèo An Khê - Chư Pao',
+    historicalDetail: 'Hỏa lực pháo binh tầm xa của đối phương bắn chặn hòng làm chậm bước tiến của Binh đoàn Tây Nguyên.',
   },
   {
-    minProgress: 55,
-    maxProgress: 75,
-    historicalEventName: 'Lá Chắn Thép Phan Rang (Tuyến phòng thủ từ xa)',
-    historicalDetail: 'Bộ Tổng tham mưu Sài Gòn lập phòng tuyến Phan Rang do tướng Nguyễn Vĩnh Nghi chỉ huy dội pháo chặn đường!',
+    eventName: 'Cụm phòng ngự Căn cứ Nước Trong - Thiết giáp Long Bình',
+    historicalDetail: 'Cụm xe tăng M48 và bộ binh địch tại ngã ba Biên Hòa điên cuồng nã đạn nhằm cản bước Quân đoàn 2.',
   },
   {
-    minProgress: 75,
-    maxProgress: 90,
-    historicalEventName: 'Tử Chiến Cánh Cửa Thép Xuân Lộc',
-    historicalDetail: 'Sư đoàn 18 VNCH (Lê Minh Đảo) điên cuồng ném bom CBU-55 và đại bác tử thủ bảo vệ cửa ngõ Sài Gòn!',
+    eventName: 'Không quân đối phương oanh tạc cắt cầu Bến Lức',
+    historicalDetail: 'Phi đội máy bay ném bom đối phương oanh kích nhằm cắt đứt cầu phao và đường tiến quân của Đoàn 232.',
   },
   {
-    minProgress: 90,
-    maxProgress: 100,
-    historicalEventName: 'Tử Thủ Cầu Rạch Chiếc & Cửa Ngõ Nội Đô',
-    historicalDetail: 'Lữ đoàn 3 kỵ binh thiết giáp và lính dù địch phục kích tại đầu cầu hòng chặn xe tăng lao vào Dinh Độc Lập!',
+    eventName: 'Pháo đài bến cảng Hải quân Sơn Trà kháng cự',
+    historicalDetail: 'Hỏa lực pháo bờ biển đối phương bắn chặn dữ dội vào đội hình thọc sâu ven biển của quân ta.',
   },
 ];
 
 /**
- * Xác thực thông tin đăng nhập Admin
+ * Danh sách toàn bộ Vật phẩm & Easter Eggs (Để quản lý và hiển thị hướng dẫn)
  */
-export function verifyAdminCredentials(username?: string, password?: string): boolean {
-  if (!username || !password) return false;
-  return (
-    username.trim() === ADMIN_CONFIG.defaultUsername &&
-    password.trim() === ADMIN_CONFIG.defaultPassword
-  );
+export const ALL_POWER_UPS: Omit<BoostItem, 'id' | 'acquiredAt'>[] = [
+  {
+    type: 'DAVIS_SHIELD',
+    name: 'Lá chắn Trại Davis',
+    description: 'Kích hoạt vòng phòng hộ thép, hóa giải hoàn toàn 1 đợt pháo kích hoặc tập kích của đối phương.',
+    icon: '🛡️',
+  },
+  {
+    type: 'TRUONG_SON_LOGISTICS',
+    name: 'Tiếp viện Trường Sơn',
+    description: 'Tăng cường nhiên liệu xăng dầu dã chiến, lập tức đẩy tiến độ xe tăng lên thêm +5%.',
+    icon: '⛽',
+  },
+  {
+    type: 'RAPID_DISPATCH',
+    name: 'Mệnh lệnh Thần tốc',
+    description: 'Thần tốc hơn nữa: Nhân đôi (+100%) điểm cho câu trả lời đúng tiếp theo. Nếu sai: bị phạt -10% điểm!',
+    icon: '⚡',
+  },
+  {
+    type: 'SMOKE_SCREEN',
+    name: 'Màn khói Ngụy trang',
+    description: 'Tung khói mù giải trừ ngay hiệu ứng choáng váng do trúng đạn và miễn nhiễm pháo kích trong 5s.',
+    icon: '💨',
+  },
+  {
+    type: 'EASTER_COMMUNICATION_CODE',
+    name: 'Bản Mật Mã Cơ Yếu 1975',
+    description: '[EASTER EGG] Cơ yếu Trung ương giải mã: Loại bỏ ngay 2 đáp án sai cho câu hỏi trắc nghiệm hiện tại.',
+    icon: '📻',
+    isEasterEgg: true,
+  },
+  {
+    type: 'EASTER_VICTORY_BANNER',
+    name: 'Cờ Thêu Quyết Chiến Toàn Thắng',
+    description: '[EASTER EGG] Cờ lệnh tiếp thêm nhuệ khí: Thưởng ngay +100 điểm danh dự cho toàn đội và hồi phục kíp lái.',
+    icon: '🚩',
+    isEasterEgg: true,
+  },
+];
+
+export function verifyAdminCredentials(username: string, password: string): boolean {
+  const expectedUser = (import.meta.env.VITE_ADMIN_USERNAME || 'admin_nhom6').trim();
+  const expectedPass = (import.meta.env.VITE_ADMIN_PASSWORD || '30041975').trim();
+
+  return username.trim() === expectedUser && password.trim() === expectedPass;
 }
