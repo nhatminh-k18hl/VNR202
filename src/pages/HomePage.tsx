@@ -10,21 +10,15 @@ import {
   Play, 
   CheckCircle2, 
   AlertTriangle,
-  HelpCircle,
   Clock,
-  Layers,
   ChevronRight,
-  Flame,
-  Award,
+  Package,
   X
 } from 'lucide-react';
-import { ALL_POWER_UPS, CREW_ROLES, HISTORICAL_MILESTONES } from '../config/adminAuth';
-import { TankSvg } from '../assets/svg/TankSvg';
+import { ALL_POWER_UPS, HISTORICAL_MILESTONES } from '../config/adminAuth';
 
 export const HomePage: React.FC = () => {
-  // Modal Chơi thử / Game Draft giới thiệu trước khi vào trận
   const [showDraftModal, setShowDraftModal] = useState<boolean>(false);
-  const [draftStep, setDraftStep] = useState<number>(1);
   const [draftSelectedOption, setDraftSelectedOption] = useState<string | null>(null);
   const [draftHasShield, setDraftHasShield] = useState<boolean>(false);
   const [draftAttackCountdown, setDraftAttackCountdown] = useState<number | null>(null);
@@ -32,7 +26,6 @@ export const HomePage: React.FC = () => {
 
   const startDraftSimulation = () => {
     setShowDraftModal(true);
-    setDraftStep(1);
     setDraftSelectedOption(null);
     setDraftHasShield(false);
     setDraftAttackStatus('IDLE');
@@ -65,7 +58,7 @@ export const HomePage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-12">
       {/* ===================================================
-          HERO BANNER - HÀO KHÍ THẦN TỐC 1975
+          HERO BANNER
           =================================================== */}
       <section className="text-center space-y-5 pt-4 pb-2 relative">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-100 dark:bg-red-950/80 border border-red-300 dark:border-red-800 text-red-700 dark:text-amber-300 text-xs font-black uppercase tracking-wider shadow-sm">
@@ -78,12 +71,12 @@ export const HomePage: React.FC = () => {
             <span className="text-red-600 dark:text-red-500">THẦN TỐC</span>{' '}
             <span className="text-stone-800 dark:text-amber-400">1975</span>
           </h1>
-          <p className="text-sm sm:text-base font-semibold text-stone-700 dark:text-stone-300">
-            Sa bàn thi đua tương tác trực tuyến • 6 Cánh quân tiến về Sài Gòn
+          <p className="text-sm sm:text-base font-semibold text-stone-600 dark:text-stone-300">
+            Trò chơi thi đua trắc nghiệm thời gian thực • 6 Cánh quân tiến về Sài Gòn
           </p>
         </div>
 
-        {/* Bức Điện Mật Lịch Sử (Võ Nguyên Giáp - 7/4/1975) */}
+        {/* Bức Điện Mật Lịch Sử */}
         <div className="max-w-2xl mx-auto p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141c16] border border-stone-200 dark:border-[#223025] shadow-sm relative text-left">
           <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-mono text-[11px] font-bold uppercase tracking-wider mb-1.5">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
@@ -93,17 +86,17 @@ export const HomePage: React.FC = () => {
           <blockquote className="text-xs sm:text-sm text-stone-700 dark:text-stone-200 italic leading-relaxed border-l-2 border-red-600 dark:border-amber-400 pl-3 py-0.5">
             "Thần tốc, thần tốc hơn nữa; Táo bạo, táo bạo hơn nữa; Tranh thủ từng phút, từng giờ; Xốc tới mặt trận; Giải phóng miền Nam; Quyết chiến và toàn thắng!"
           </blockquote>
-          <div className="text-right text-[11px] text-stone-600 dark:text-stone-300 font-bold mt-1">
+          <div className="text-right text-[11px] text-stone-500 dark:text-stone-400 font-bold mt-1">
             — Đại tướng Võ Nguyên Giáp
           </div>
         </div>
       </section>
 
       {/* ===================================================
-          CỬA KHẨU THAO TÁC: VÀO CHƠI & BẢN NHÁP DRAFT DEMO
+          CỬA KHẨU THAO TÁC CHÍNH
           =================================================== */}
       <section className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {/* Cửa Khẩu 1: Vào Chiến Hào */}
+        {/* Vào Chơi */}
         <Link
           to="/play"
           className="group p-6 rounded-2xl bg-white dark:bg-[#131b15] border-2 border-stone-200 dark:border-[#223025] hover:border-red-500 dark:hover:border-amber-400 transition-all shadow-sm hover:shadow-md flex flex-col justify-between"
@@ -114,21 +107,21 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-black text-stone-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-amber-400 flex items-center gap-1.5">
-                Vào Chiến Hào Tác Chiến
+                Vào Chơi Ngay
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </h2>
-              <p className="text-xs text-stone-700 dark:text-stone-300 mt-1 leading-relaxed">
-                Nhập tên và chọn 1 trong 6 cánh quân. Cùng kíp xe hợp sức giải đáp trắc nghiệm và bảo vệ xe tăng!
+              <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
+                Nhập tên và chọn nhóm của bạn. Cùng các thành viên trả lời câu hỏi và đẩy xe tăng tiến về đích!
               </p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-stone-100 dark:border-[#1e2a21] text-xs font-bold text-red-600 dark:text-amber-400 flex items-center justify-between">
-            <span>Dành cho cả lớp</span>
-            <span>Tham gia →</span>
+            <span>Dành cho thành viên các nhóm</span>
+            <span>Vào phòng →</span>
           </div>
         </Link>
 
-        {/* Cửa Khẩu 2: Chơi Thử / Game Draft Demo */}
+        {/* Chơi Thử / Game Draft Demo */}
         <button
           onClick={startDraftSimulation}
           className="text-left group p-6 rounded-2xl bg-white dark:bg-[#131b15] border-2 border-dashed border-amber-300 dark:border-amber-700/80 hover:border-amber-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between"
@@ -139,23 +132,23 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-black text-stone-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 flex items-center gap-1.5">
-                Chơi Thử / Game Draft
+                Chơi Thử / Xem Trước
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
-                  Thuyết Trình
+                  Demo
                 </span>
               </h2>
-              <p className="text-xs text-stone-700 dark:text-stone-300 mt-1 leading-relaxed">
-                Mở phòng tập dượt nhanh để thuyết minh luật chơi, thử thao tác chuột, đón đòn pháo kích và dùng khiên đỡ đòn.
+              <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
+                Bấm vào đây để thử nhanh cách chơi: click chọn đáp án, xem địch bắn và thử bấm nút bật khiên đỡ đạn.
               </p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-stone-100 dark:border-[#1e2a21] text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center justify-between">
-            <span>Tập dượt cơ chế</span>
-            <span>Mở Draft →</span>
+            <span>Tập dượt luật chơi</span>
+            <span>Mở Chơi Thử →</span>
           </div>
         </button>
 
-        {/* Cửa Khẩu 3: Chỉ Huy Sở (Admin) */}
+        {/* Quản Trò (Admin) */}
         <Link
           to="/admin"
           className="group p-6 rounded-2xl bg-white dark:bg-[#131b15] border-2 border-stone-200 dark:border-[#223025] hover:border-stone-400 dark:hover:border-stone-600 transition-all shadow-sm hover:shadow-md flex flex-col justify-between"
@@ -166,124 +159,107 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-black text-stone-900 dark:text-white group-hover:text-stone-700 dark:group-hover:text-stone-300 flex items-center gap-1.5">
-                Chỉ Huy Sở Quản Trò
+                Màn Hình Quản Trò
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </h2>
-              <p className="text-xs text-stone-700 dark:text-stone-300 mt-1 leading-relaxed">
-                Dành cho Ban điều hành: Màn hình lớn sa bàn 6 làn xe tăng, phát loa còi báo động, thả dù tiếp viện và vinh danh kết quả.
+              <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
+                Dành cho máy chiếu: Chiếu đường đua xe tăng của 6 đội, bấm bắt đầu, thả hộp tiếp tế và xem bảng xếp hạng.
               </p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-stone-100 dark:border-[#1e2a21] text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center justify-between">
-            <span>Dành cho máy chiếu</span>
+            <span>Dành cho ban tổ chức</span>
             <span>Vào Quản Trò →</span>
           </div>
         </Link>
       </section>
 
       {/* ===================================================
-          HƯỚNG DẪN CƠ CHẾ CHƠI & THAO TÁC NHANH BẰNG CHUỘT
+          HƯỚNG DẪN CÁCH CHƠI SIÊU DỄ HIỂU (3 BƯỚC)
           =================================================== */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <MousePointerClick className="w-5 h-5 text-red-600 dark:text-red-500" />
           <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-white uppercase tracking-wide">
-            Cơ Chế Tác Chiến & Thao Tác Nhanh
+            Cách Chơi Rất Đơn Giản
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card 1: Thao tác trắc nghiệm */}
           <div className="p-5 rounded-2xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] space-y-2 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase text-red-600 dark:text-red-400">1. Trả Lời Siêu Tốc</span>
-              <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300">15 - 20s/câu</span>
+              <span className="text-xs font-black uppercase text-red-600 dark:text-red-400">Bước 1: Click Chuột Trả Lời</span>
+              <span className="text-[11px] font-bold text-stone-400">18s / câu</span>
             </div>
-            <h3 className="font-bold text-sm text-stone-900 dark:text-white">Thao tác chuột hoặc phím tắt</h3>
-            <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
-              Nhấp chuột trái chọn nhanh phương án A, B, C, D hoặc bấm các phím số <strong className="text-stone-900 dark:text-white">[1, 2, 3, 4]</strong> trên bàn phím để trả lời ngay mà không cần di chuột nhiều.
+            <h3 className="font-bold text-sm text-stone-900 dark:text-white">Dùng chuột click chọn đáp án</h3>
+            <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+              Chỉ cần dùng chuột click vào đáp án A, B, C hoặc D. Trả lời đúng sẽ cộng điểm và xe tăng của đội bạn sẽ tiến lên phía trước.
             </p>
           </div>
 
-          {/* Card 2: Kíp lái xe tăng Co-op */}
           <div className="p-5 rounded-2xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] space-y-2 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase text-amber-600 dark:text-amber-400">2. Kíp Lái Đồng Lòng</span>
-              <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300">Xe tăng chung</span>
+              <span className="text-xs font-black uppercase text-amber-600 dark:text-amber-400">Bước 2: Click Hộp Tiếp Tế</span>
+              <span className="text-[11px] font-bold text-stone-400">Rơi mỗi 30s</span>
             </div>
-            <h3 className="font-bold text-sm text-stone-900 dark:text-white">Các thành viên là một kíp xe</h3>
-            <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
-              Mỗi đội gồm các chiến sĩ cùng đẩy 1 chiếc xe tăng tiến về Dinh Độc Lập. Khi cả đội cùng đúng trong một thời điểm, cơ hội nhận được vật phẩm quý hoặc Easter Egg sẽ tăng vọt!
+            <h3 className="font-bold text-sm text-stone-900 dark:text-white">Nhặt đồ bảo vệ xe tăng</h3>
+            <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+              Khi thấy hộp tiếp tế thả dù rơi xuống, hãy nhanh tay click thẳng vào hộp đồ để nhận vật phẩm (Khiên bảo vệ, Tăng tốc...) cho đội mình.
             </p>
           </div>
 
-          {/* Card 3: Địch Phản Kích & Khiên Bảo Vệ */}
           <div className="p-5 rounded-2xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] space-y-2 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase text-emerald-600 dark:text-emerald-400">3. Chống Địch Phản Kích</span>
-              <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300">Đếm ngược 3s</span>
+              <span className="text-xs font-black uppercase text-emerald-600 dark:text-emerald-400">Bước 3: Bật Khiên Khi Bị Bắn</span>
+              <span className="text-[11px] font-bold text-stone-400">Còi báo động</span>
             </div>
-            <h3 className="font-bold text-sm text-stone-900 dark:text-white">Vật phẩm sinh ra để bảo vệ</h3>
-            <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
-              Hỏa lực địch (Xuân Lộc, Long Bình, Dầu Giây...) sẽ nhắm bắn đội cao nhất. Bật <strong>Lá chắn Trại Davis</strong> trong 3s cảnh báo để đỡ đòn, nếu không kíp xe sẽ bị choáng váng 5s!
+            <h3 className="font-bold text-sm text-stone-900 dark:text-white">Đỡ đòn pháo kích của địch</h3>
+            <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+              Địch sẽ bắn ngẫu nhiên (đội điểm cao có nguy cơ bị bắn nhiều hơn). Khi có còi báo động nhắm vào đội mình, ai có Khiên hãy click dùng ngay để không bị choáng!
             </p>
           </div>
         </div>
       </section>
 
       {/* ===================================================
-          DANH MỤC VẬT PHẨM & QUY TẮC ĐỘC QUYỀN ĐỘI
+          CÁC MÓN ĐỒ TIẾP TẾ
           =================================================== */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-amber-500" />
             <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-white uppercase tracking-wide">
-              Kho Lệnh Bài Chiến Thuật & Tiếp Viện
+              Các Món Đồ Hỗ Trợ
             </h2>
           </div>
-          <span className="text-xs text-stone-600 dark:text-stone-300">Mỗi đội tối đa 1 món cùng loại</span>
+          <span className="text-xs text-stone-500">Mỗi đội chỉ giữ tối đa 1 món cùng loại</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {ALL_POWER_UPS.filter((p) => !p.isEasterEgg).map((powerUp) => (
             <div
               key={powerUp.type}
-              className="p-4 rounded-2xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] space-y-2 shadow-sm"
+              className="p-4 rounded-2xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] space-y-1.5 shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <span className="font-black text-xs text-stone-900 dark:text-white flex items-center gap-1.5">
                   <span className="text-base">{powerUp.icon}</span>
                   {powerUp.name}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300">
                   Dùng 1 lần
                 </span>
               </div>
-              <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+              <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
                 {powerUp.description}
               </p>
             </div>
           ))}
         </div>
-
-        {/* Thông tin thêm về Quy Tắc Giành Đồ (Supply Draft) */}
-        <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-[#18211a] border border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-stone-700 dark:text-stone-300">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">📦</span>
-            <div>
-              <strong className="text-stone-900 dark:text-white block font-bold">Hòm Tiếp Viện Thả Dù (Supply Draft)</strong>
-              <span>Xuất hiện định kỳ trên sa bàn. Chiến sĩ nào nhanh tay nhặt trước sẽ sở hữu món đồ cho kíp xe của mình!</span>
-            </div>
-          </div>
-          <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950 px-2.5 py-1 rounded-full whitespace-nowrap">
-            Cạnh tranh thời gian thực
-          </span>
-        </div>
       </section>
 
       {/* ===================================================
-          MODAL CHƠI THỬ / GAME DRAFT GIỚI THIỆU TRỰC TIẾP
+          MODAL CHƠI THỬ / GAME DRAFT
           =================================================== */}
       {showDraftModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
@@ -297,31 +273,31 @@ export const HomePage: React.FC = () => {
 
             <div className="space-y-1">
               <span className="text-xs font-black uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                <Play className="w-3.5 h-3.5 fill-amber-500" /> Bản Nháp / Thao Diễn Giới Thiệu (Draft Sandbox)
+                <Play className="w-3.5 h-3.5 fill-amber-500" /> Chơi Thử Nhanh (Xem Trước Cách Chơi)
               </span>
               <h3 className="text-lg font-black text-stone-900 dark:text-white">
-                Thử Nghiệm Thao Tác & Cơ Chế Chiến Thuật
+                Tập Dượt Thao Tác Chuột & Bật Khiên
               </h3>
             </div>
 
-            {/* Bước 1: Trả lời trắc nghiệm & phím tắt */}
+            {/* Bước 1: Trả lời trắc nghiệm */}
             <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#0d140e] border border-stone-200 dark:border-[#223025] space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-stone-500">Câu hỏi thử nghiệm</span>
+                <span className="font-bold text-stone-500">Câu hỏi thử:</span>
                 <span className="font-mono text-red-600 dark:text-red-400 font-bold flex items-center gap-1">
                   <Clock className="w-3 h-3" /> 18s
                 </span>
               </div>
               <p className="text-xs sm:text-sm font-bold text-stone-900 dark:text-white">
-                Hội nghị lần thứ 21 Ban Chấp hành Trung ương Đảng (7/1973) đã xác định con đường nào cho cách mạng miền Nam?
+                Hội nghị lần thứ 21 Ban Chấp hành Trung ương Đảng (7/1973) xác định con đường nào cho cách mạng miền Nam?
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 {[
                   { key: 'A', text: 'Con đường đấu tranh hòa bình' },
                   { key: 'B', text: 'Con đường bạo lực cách mạng', correct: true },
-                  { key: 'C', text: 'Chỉ dựa vào ngoại giao quốc tế' },
-                  { key: 'D', text: 'Chờ đợi đối phương tự sụp đổ' },
+                  { key: 'C', text: 'Chỉ dựa vào ngoại giao' },
+                  { key: 'D', text: 'Chờ đối phương tự sụp đổ' },
                 ].map((opt) => (
                   <button
                     key={opt.key}
@@ -335,7 +311,7 @@ export const HomePage: React.FC = () => {
                     }`}
                   >
                     <span>
-                      <strong className="mr-2 font-mono text-red-600 dark:text-amber-400">[{opt.key}]</strong>
+                      <strong className="mr-1.5 text-red-600 dark:text-amber-400">{opt.key}.</strong>
                       {opt.text}
                     </span>
                     {draftSelectedOption === opt.key && (
@@ -346,52 +322,52 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Bước 2: Mô phỏng Địch Phản Kích & Dùng Khiên */}
+            {/* Bước 2: Thử địch bắn và bấm khiên */}
             <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#0d140e] border border-stone-200 dark:border-[#223025] space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-stone-500">Mô phỏng Địch Phản Kích (PvE)</span>
+                <span className="font-bold text-stone-500">Thử tình huống địch bắn:</span>
                 {draftAttackStatus === 'IDLE' && (
                   <button
                     onClick={triggerDraftAttackWarning}
                     className="px-2.5 py-1 rounded bg-red-600 text-white font-bold text-[11px] hover:bg-red-700 shadow-sm"
                   >
-                    Kích hoạt thử pháo kích địch
+                    Thử tạo tiếng địch bắn
                   </button>
                 )}
               </div>
 
               {draftAttackStatus === 'WARNING' && (
-                <div className="p-3 rounded-xl bg-red-100 dark:bg-red-950 border border-red-500 text-red-800 dark:text-red-200 text-xs space-y-2 animate-pulse">
+                <div className="p-3 rounded-xl bg-red-100 dark:bg-red-950 border border-red-500 text-red-800 dark:text-red-200 text-xs space-y-1.5 animate-pulse">
                   <div className="flex items-center justify-between font-bold">
                     <span className="flex items-center gap-1.5">
                       <AlertTriangle className="w-4 h-4 text-red-600" />
-                      CẢNH BÁO: Pháo binh địch tại Xuân Lộc bắn chặn!
+                      CẢNH BÁO: Địch đang bắn pháo vào xe bạn!
                     </span>
-                    <span className="text-base font-black font-mono text-red-600 dark:text-amber-400">
-                      Va chạm sau: {draftAttackCountdown}s
+                    <span className="text-sm font-black font-mono text-red-600 dark:text-amber-400">
+                      Đang tới...
                     </span>
                   </div>
-                  <p className="text-[11px]">Bấm vào nút Khiên dưới đây trước khi hết giờ để hóa giải:</p>
+                  <p className="text-[11px]">Click nhanh vào nút Bật Khiên bên dưới để không bị trúng đạn:</p>
                 </div>
               )}
 
               {draftAttackStatus === 'DEFENDED' && (
                 <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-950 border border-emerald-500 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span><strong>ĐÃ ĐỠ THÀNH CÔNG!</strong> Lá chắn Trại Davis đã chặn đòn pháo. Kíp xe an toàn!</span>
+                  <span><strong>ĐÃ BẬT KHIÊN ĐỠ ĐÒN THÀNH CÔNG!</strong> Xe của đội bạn hoàn toàn an toàn.</span>
                 </div>
               )}
 
               {draftAttackStatus === 'HIT' && (
                 <div className="p-3 rounded-xl bg-stone-200 dark:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs flex items-center gap-2">
                   <span className="text-base">💥</span>
-                  <span><strong>TRÚNG ĐẠN!</strong> Không kịp bật khiên, kíp lái bị choáng váng và trừ điểm streak.</span>
+                  <span><strong>BỊ TRÚNG ĐẠN!</strong> Không bật khiên kịp, thành viên sẽ bị mờ câu hỏi trong 1-2s.</span>
                 </div>
               )}
 
-              {/* Nút dùng khiên thử nghiệm */}
+              {/* Nút bấm khiên */}
               <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-stone-600 dark:text-stone-400">Túi đồ của bạn:</span>
+                <span className="text-xs text-stone-500">Đồ trong túi của bạn:</span>
                 <button
                   onClick={handleDraftUseShield}
                   disabled={draftHasShield}
@@ -402,7 +378,7 @@ export const HomePage: React.FC = () => {
                   }`}
                 >
                   <Shield className="w-3.5 h-3.5" />
-                  {draftHasShield ? 'Đã bật Khiên thép' : 'Bật [Lá chắn Trại Davis]'}
+                  {draftHasShield ? 'Đã bật Khiên' : 'Bật [Lá chắn Trại Davis]'}
                 </button>
               </div>
             </div>
@@ -412,7 +388,7 @@ export const HomePage: React.FC = () => {
                 onClick={() => setShowDraftModal(false)}
                 className="px-5 py-2.5 rounded-xl bg-stone-900 dark:bg-stone-700 text-white font-bold text-xs hover:bg-stone-800"
               >
-                Đã Hiểu Luật • Sẵn Sàng Ra Trận
+                Đã Hiểu Luật • Đóng Cửa Sổ
               </button>
             </div>
           </div>

@@ -26,10 +26,10 @@ export const TankSvg: React.FC<TankSvgProps> = ({
         <div className="absolute -inset-2.5 rounded-full border-2 border-emerald-400 bg-emerald-400/15 animate-pulse pointer-events-none shadow-[0_0_18px_rgba(52,211,153,0.5)] z-20" />
       )}
 
-      {/* Hiệu ứng bị choáng váng do trúng đạn pháo (Concussion / Shell-shock) */}
+      {/* Hiệu ứng bị choáng váng do trúng đạn pháo */}
       {isShellShocked && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-red-600/95 text-[10px] font-black text-white px-2 py-0.5 rounded-full shadow-lg border border-amber-300 animate-bounce">
-          <span>⚠️ KÍP LÁI CHOÁNG</span>
+          <span>⚠️ BỊ CHOÁNG</span>
         </div>
       )}
 
@@ -44,7 +44,6 @@ export const TankSvg: React.FC<TankSvgProps> = ({
       {/* MẶT ĐẤT & VỆT ĐỊA HÌNH DI CHUYỂN DƯỚI GẦM XE (MOVING GROUND) */}
       <div className="absolute -bottom-2.5 inset-x-0 h-3 overflow-hidden pointer-events-none z-0">
         <div className={`flex w-[200%] h-full items-center ${isMoving ? 'tank-ground-moving' : ''}`}>
-          {/* Vệt địa hình đất đồi & bụi đá cuội */}
           <div className="w-1/2 flex items-center justify-between border-b-2 border-stone-400/40 dark:border-stone-600/50">
             <span className="w-3 h-0.5 bg-stone-500/50 rounded-full inline-block" />
             <span className="w-1.5 h-1 bg-stone-600/60 rounded-full inline-block" />
@@ -69,20 +68,17 @@ export const TankSvg: React.FC<TankSvgProps> = ({
         className="w-full h-full drop-shadow-md overflow-visible relative z-10"
       >
         <defs>
-          {/* Pattern xích xe tăng thép dã chiến tĩnh (Không quay tròn nhức mắt) */}
           <pattern id={`tread-${tankNumber}`} width="8" height="12" patternUnits="userSpaceOnUse">
             <rect width="6" height="10" rx="1" fill="#1C1F1D" />
             <line x1="1" y1="5" x2="5" y2="5" stroke="#4B5563" strokeWidth="1" />
           </pattern>
 
-          {/* Gradient vỏ thép xe tăng T-54 */}
           <linearGradient id={`hullGrad-${tankNumber}`} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#4A614D" />
             <stop offset="50%" stopColor="#354837" />
             <stop offset="100%" stopColor="#223024" />
           </linearGradient>
 
-          {/* Gradient tháp pháo hình vòm bán cầu */}
           <radialGradient id={`turretGrad-${tankNumber}`} cx="40%" cy="40%" r="60%">
             <stop offset="0%" stopColor="#556E58" />
             <stop offset="70%" stopColor="#354837" />
@@ -90,7 +86,6 @@ export const TankSvg: React.FC<TankSvgProps> = ({
           </radialGradient>
         </defs>
 
-        {/* Khói xả động cơ khi đang tiến quân */}
         {isMoving && (
           <g className="animate-pulse opacity-70">
             <circle cx="16" cy="44" r="4" fill="#9CA3AF" opacity="0.6" />
@@ -99,12 +94,11 @@ export const TankSvg: React.FC<TankSvgProps> = ({
           </g>
         )}
 
-        {/* CỘT CỜ VÀ LÁ CỜ MẶT TRẬN DÂN TỘC GIẢI PHÓNG MIỀN NAM VIỆT NAM */}
+        {/* Lá cờ Giải phóng */}
         <g transform="translate(68, 6)">
           <line x1="0" y1="0" x2="0" y2="34" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" />
           <circle cx="0" cy="0" r="2" fill="#FBBF24" />
 
-          {/* Lá cờ Giải phóng (Nửa đỏ, nửa xanh, sao vàng) */}
           <g className="origin-left">
             <path d="M 0,0 Q 15,-2 30,0 L 30,11 Q 15,9 0,11 Z" fill="#DA251D" />
             <path d="M 0,11 Q 15,9 30,11 L 30,22 Q 15,20 0,22 Z" fill="#0072CE" />
@@ -117,14 +111,14 @@ export const TankSvg: React.FC<TankSvgProps> = ({
           </g>
         </g>
 
-        {/* NÒNG PHÁO CHÍNH D-10T CỠ 100MM */}
+        {/* Nòng pháo */}
         <g id="main-cannon">
           <rect x="110" y="44" width="75" height="5" rx="1.5" fill="#2E3C30" stroke="#1C261E" strokeWidth="1" />
           <rect x="165" y="43" width="12" height="7" rx="1" fill="#222E24" />
           <rect x="182" y="43" width="6" height="7" rx="1" fill="#18221A" />
         </g>
 
-        {/* THÂN XE TĂNG (HULL) */}
+        {/* Thân xe tăng */}
         <g id="hull">
           <path
             d="M 22 56 L 165 56 L 175 64 L 178 78 L 20 78 L 15 65 Z"
@@ -135,13 +129,12 @@ export const TankSvg: React.FC<TankSvgProps> = ({
           <path d="M 160 56 L 175 64 L 178 78 L 168 78 L 150 56 Z" fill="#28372A" opacity="0.6" />
           <line x1="26" y1="62" x2="160" y2="62" stroke="#4F6852" strokeWidth="1" opacity="0.7" />
 
-          {/* Thùng nhiên liệu phụ phía sau */}
           <rect x="8" y="58" width="12" height="14" rx="2" fill="#243026" stroke="#151E17" strokeWidth="1" />
           <line x1="10" y1="63" x2="18" y2="63" stroke="#3D5040" strokeWidth="1" />
           <line x1="10" y1="67" x2="18" y2="67" stroke="#3D5040" strokeWidth="1" />
         </g>
 
-        {/* THÁP PHÁO BÁN CẦU VÒM T-54 */}
+        {/* Tháp pháo */}
         <g id="turret">
           <path
             d="M 62 56 C 62 38, 126 38, 130 56 Z"
@@ -152,7 +145,7 @@ export const TankSvg: React.FC<TankSvgProps> = ({
           <ellipse cx="80" cy="40" rx="9" ry="3.5" fill="#263428" stroke="#1B251D" strokeWidth="1" />
           <line x1="77" y1="38" x2="77" y2="42" stroke="#485E4B" strokeWidth="1" />
 
-          {/* SỐ HIỆU XE TĂNG (390, 843...) */}
+          {/* Số hiệu xe tăng */}
           <rect x="84" y="44" width="28" height="11" rx="2" fill="#000000" opacity="0.5" />
           <text
             x="98"
@@ -167,11 +160,10 @@ export const TankSvg: React.FC<TankSvgProps> = ({
             {tankNumber}
           </text>
 
-          {/* Dải màu quân đoàn */}
           <rect x="70" y="52" width="56" height="3" fill={color} opacity="0.9" rx="1" />
         </g>
 
-        {/* DẢI XÍCH VÀ CÁC BÁNH CHỊU NẶNG TĨNH (KHÔNG XOAY TRÒN) */}
+        {/* Dải xích tĩnh */}
         <g id="tracks">
           <rect
             x="28"
@@ -192,7 +184,6 @@ export const TankSvg: React.FC<TankSvgProps> = ({
             fill={`url(#tread-${tankNumber})`}
           />
 
-          {/* 5 Bánh chịu lực lớn đặc trưng T-54 */}
           {[48, 73, 98, 123, 148].map((cx, idx) => (
             <g key={idx}>
               <circle cx={cx} cy="89" r="10.5" fill="#1A201C" stroke="#2B382E" strokeWidth="1" />
@@ -206,7 +197,6 @@ export const TankSvg: React.FC<TankSvgProps> = ({
             </g>
           ))}
 
-          {/* Bánh dẫn hướng trước & bánh chủ động sau */}
           <circle cx="34" cy="89" r="5" fill="#2A372C" stroke="#111813" strokeWidth="1" />
           <circle cx="166" cy="89" r="5" fill="#2A372C" stroke="#111813" strokeWidth="1" />
         </g>

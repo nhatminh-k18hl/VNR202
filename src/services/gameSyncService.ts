@@ -1,13 +1,12 @@
 /**
  * THẦN TỐC 1975 - DỊCH VỤ ĐỒNG BỘ DỮ LIỆU ĐA CHẾ ĐỘ
- * Hỗ trợ Co-op Kíp Lái Xe Tăng, PvE Địch Phản Kích Lịch Sử, Hòm Tiếp Viện & Easter Eggs
+ * Hỗ trợ thi đua đồng đội, Địch Phản Kích Theo Trọng Số Xác Suất, Hòm Tiếp Viện & Easter Eggs
  */
 
 import { HISTORICAL_COUNTER_ATTACKS, INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
 import { 
   AnswerKey,
   BoostItem, 
-  CrewRole,
   EnemyCounterAttack,
   GamePhase, 
   ItemType, 
@@ -34,7 +33,7 @@ export interface FullGameState {
   discoveredEasterEggs: BoostItem[];
 }
 
-const STORAGE_KEY = 'than_toc_1975_state_v2';
+const STORAGE_KEY = 'than_toc_1975_state_v3';
 const DB_URL_KEY = 'than_toc_1975_firebase_url';
 
 class GameSyncService {
@@ -47,31 +46,31 @@ class GameSyncService {
   private botTimer: any = null;
 
   // 18 Học viên ảo chia đều 6 nhóm (3 học viên / nhóm)
-  private readonly botProfiles: { name: string; teamId: TeamId; role: CrewRole }[] = [
+  private readonly botProfiles: { name: string; teamId: TeamId }[] = [
     // Nhóm 1
-    { name: 'Vũ Quang Huy', teamId: 'team_1', role: 'COMMANDER' },
-    { name: 'Đỗ Thu Phương', teamId: 'team_1', role: 'GUNNER' },
-    { name: 'Nguyễn Đức Thắng', teamId: 'team_1', role: 'DRIVER' },
+    { name: 'Vũ Quang Huy', teamId: 'team_1' },
+    { name: 'Đỗ Thu Phương', teamId: 'team_1' },
+    { name: 'Nguyễn Đức Thắng', teamId: 'team_1' },
     // Nhóm 2
-    { name: 'Lê Hoàng Long', teamId: 'team_2', role: 'COMMANDER' },
-    { name: 'Trần Mai Chi', teamId: 'team_2', role: 'GUNNER' },
-    { name: 'Phạm Quốc Bảo', teamId: 'team_2', role: 'DRIVER' },
+    { name: 'Lê Hoàng Long', teamId: 'team_2' },
+    { name: 'Trần Mai Chi', teamId: 'team_2' },
+    { name: 'Phạm Quốc Bảo', teamId: 'team_2' },
     // Nhóm 3
-    { name: 'Hoàng Minh Tuấn', teamId: 'team_3', role: 'COMMANDER' },
-    { name: 'Ngô Bích Ngọc', teamId: 'team_3', role: 'GUNNER' },
-    { name: 'Đinh Trọng Nghĩa', teamId: 'team_3', role: 'DRIVER' },
+    { name: 'Hoàng Minh Tuấn', teamId: 'team_3' },
+    { name: 'Ngô Bích Ngọc', teamId: 'team_3' },
+    { name: 'Đinh Trọng Nghĩa', teamId: 'team_3' },
     // Nhóm 4
-    { name: 'Bùi Thanh Tùng', teamId: 'team_4', role: 'COMMANDER' },
-    { name: 'Lý Lan Hương', teamId: 'team_4', role: 'GUNNER' },
-    { name: 'Dương Tiến Đạt', teamId: 'team_4', role: 'DRIVER' },
+    { name: 'Bùi Thanh Tùng', teamId: 'team_4' },
+    { name: 'Lý Lan Hương', teamId: 'team_4' },
+    { name: 'Dương Tiến Đạt', teamId: 'team_4' },
     // Nhóm 5
-    { name: 'Phan Anh Quân', teamId: 'team_5', role: 'COMMANDER' },
-    { name: 'Võ Quỳnh Nga', teamId: 'team_5', role: 'GUNNER' },
-    { name: 'Hồ Văn Cường', teamId: 'team_5', role: 'DRIVER' },
+    { name: 'Phan Anh Quân', teamId: 'team_5' },
+    { name: 'Võ Quỳnh Nga', teamId: 'team_5' },
+    { name: 'Hồ Văn Cường', teamId: 'team_5' },
     // Nhóm 7
-    { name: 'Trương Hải Đăng', teamId: 'team_7', role: 'COMMANDER' },
-    { name: 'Lê Thúy Vi', teamId: 'team_7', role: 'GUNNER' },
-    { name: 'Nguyễn Khắc Việt', teamId: 'team_7', role: 'DRIVER' },
+    { name: 'Trương Hải Đăng', teamId: 'team_7' },
+    { name: 'Lê Thúy Vi', teamId: 'team_7' },
+    { name: 'Nguyễn Khắc Việt', teamId: 'team_7' },
   ];
 
   constructor() {
@@ -84,7 +83,7 @@ class GameSyncService {
     this.state = this.loadInitialState();
 
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-      this.channel = new BroadcastChannel('than_toc_1975_channel_v2');
+      this.channel = new BroadcastChannel('than_toc_1975_channel_v3');
       this.channel.onmessage = (event) => {
         if (event.data?.type === 'SYNC_STATE') {
           this.state = event.data.payload;
@@ -97,7 +96,6 @@ class GameSyncService {
       this.startCloudSync();
     }
 
-    // Khởi động vòng lặp đếm ngược 1s
     this.startMainGameLoop();
   }
 
@@ -108,7 +106,6 @@ class GameSyncService {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed.teams && parsed.roomState) {
-            // Đảm bảo các mảng mới không bị undefined
             parsed.currentEnemyAttack = parsed.currentEnemyAttack || null;
             parsed.supplyDraftPool = parsed.supplyDraftPool || [];
             parsed.discoveredEasterEggs = parsed.discoveredEasterEggs || [];
@@ -127,7 +124,7 @@ class GameSyncService {
         phase: 'WAITING',
         isBotActive: false,
         firebaseDbUrl: this.cloudDbUrl,
-        matchDurationSeconds: 300, // 5 phút
+        matchDurationSeconds: 300,
         timeRemainingSeconds: 300,
       },
       teams: JSON.parse(JSON.stringify(INITIAL_TEAMS_CONFIG)),
@@ -139,7 +136,7 @@ class GameSyncService {
         {
           id: 'ev_init',
           timestamp: Date.now(),
-          message: '🎖️ Chỉ Huy Sở đã triển khai sa bàn chiến thuật. Sẵn sàng lệnh xuất kích!',
+          message: '🎖️ Chỉ Huy Sở đã mở phòng tác chiến. Sẵn sàng lệnh xuất kích!',
           type: 'info',
         },
       ],
@@ -268,7 +265,7 @@ class GameSyncService {
         }
       }
 
-      // 2. Xử lý Đếm ngược Địch Phản Kích (PvE Counter-Attack)
+      // 2. Xử lý Đếm ngược Địch Phản Kích
       if (this.state.currentEnemyAttack && this.state.currentEnemyAttack.status === 'WARNING') {
         const attack = this.state.currentEnemyAttack;
         const targetTeam = this.state.teams.find((t) => t.id === attack.targetTeamId);
@@ -281,7 +278,7 @@ class GameSyncService {
           soundService.playShieldBlock();
 
           this.addLiveEvent(
-            `🛡️ KÍP LÁI BẢO TOÀN! [Lá chắn Trại Davis] của ${targetTeam.name} đã đỡ trúng đòn pháo kích!`,
+            `🛡️ BẢO VỆ THÀNH CÔNG! [Lá chắn Trại Davis] của ${targetTeam.name} đã đỡ trọn đòn pháo kích!`,
             'defense',
             targetTeam.id
           );
@@ -295,22 +292,21 @@ class GameSyncService {
 
           hasChanged = true;
         } else {
-          // Đếm ngược 1s
           attack.countdownSeconds -= 1;
           hasChanged = true;
 
-          // Nếu hết thời gian mà không có khiên: Trúng đòn!
+          // Hết giờ mà không có khiên: Trúng đòn!
           if (attack.countdownSeconds <= 0) {
             attack.status = 'HIT';
             soundService.playEnemyStrike();
 
             if (targetTeam) {
-              // Phạt kíp lái: Bị choáng váng 5s & trừ 10% điểm nếu có streak
+              // Thành viên trong đội bị choáng 1-2s & trừ 10% điểm nếu có streak
               this.state.players
                 .filter((p) => p.teamId === targetTeam.id)
                 .forEach((p) => {
                   p.isShellShocked = true;
-                  p.shellShockExpiresAt = Date.now() + 5000;
+                  p.shellShockExpiresAt = Date.now() + 2500;
                   if (p.currentStreak > 0 || p.isSpeedBoostActive) {
                     p.score = Math.max(0, Math.round(p.score * 0.9));
                     p.currentStreak = 0;
@@ -319,7 +315,7 @@ class GameSyncService {
                 });
 
               this.addLiveEvent(
-                `💥 TRÚNG ĐẠN! ${targetTeam.name} bị pháo kích địch đánh trúng! Kíp lái bị choáng váng trong 5 giây!`,
+                `💥 TRÚNG ĐẠN! ${targetTeam.name} bị pháo kích trúng! Thành viên bị choáng váng trong giây lát!`,
                 'attack',
                 targetTeam.id
               );
@@ -341,13 +337,13 @@ class GameSyncService {
         hasChanged = true;
       }
 
-      // 4. Thả Hòm Tiếp Viện Dã Chiến (Supply Drop) Mỗi ~35 giây
-      if (loopCounter % 35 === 0) {
+      // 4. Mặc định tự động thả thính mỗi 30 giây (nếu không có đồ đang chờ)
+      if (loopCounter % 30 === 0) {
         this.spawnSupplyDraftDrop();
         hasChanged = true;
       }
 
-      // 5. Giải trừ hiệu ứng choáng váng kíp lái hết hạn
+      // 5. Giải trừ hiệu ứng choáng váng hết hạn
       const now = Date.now();
       this.state.players.forEach((p) => {
         if (p.isShellShocked && p.shellShockExpiresAt && p.shellShockExpiresAt <= now) {
@@ -363,27 +359,36 @@ class GameSyncService {
   }
 
   // ==========================================
-  // PVE: ĐỊCH PHẢN KÍCH LỊCH SỬ (CHỐNG TRẢ THẬT)
+  // PVE: ĐỊCH BẮN NGẪU NHIÊN THEO TRỌNG SỐ XÁC SUẤT
+  // (Đội nào càng cao điểm/tiến độ thì xác suất bị bắn càng cao hơn)
   // ==========================================
   public triggerHistoricalEnemyAttack() {
     if (this.state.roomState.phase !== 'BATTLE' || this.state.currentEnemyAttack) return;
 
-    // Chọn ngẫu nhiên sự kiện lịch sử chân thực
     const randomEvent = HISTORICAL_COUNTER_ATTACKS[Math.floor(Math.random() * HISTORICAL_COUNTER_ATTACKS.length)];
 
-    // Luôn nhắm vào đội đang dẫn đầu tiến độ hoặc điểm số
-    const sortedTeams = [...this.state.teams].sort((a, b) => {
-      if (b.progress !== a.progress) return b.progress - a.progress;
-      return b.totalScore - a.totalScore;
-    });
-    const leadingTeam = sortedTeams[0] || this.state.teams[0];
+    // Tính trọng số: đội tiến độ và điểm càng cao thì xác suất bị bắn càng lớn
+    // nhưng các đội thấp hơn vẫn có tỉ lệ bị bắn ngẫu nhiên
+    const teams = this.state.teams;
+    const weights = teams.map((t) => Math.max(10, (t.progress || 0) * 2 + Math.floor((t.totalScore || 0) / 4)));
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+    let rand = Math.random() * totalWeight;
+    let selectedTeam = teams[0];
+    for (let i = 0; i < teams.length; i++) {
+      if (rand < weights[i]) {
+        selectedTeam = teams[i];
+        break;
+      }
+      rand -= weights[i];
+    }
 
     const attack: EnemyCounterAttack = {
       id: 'atk_' + Date.now(),
       eventName: randomEvent.eventName,
       historicalDetail: randomEvent.historicalDetail,
-      targetTeamId: leadingTeam.id,
-      targetTeamName: leadingTeam.name,
+      targetTeamId: selectedTeam.id,
+      targetTeamName: selectedTeam.name,
       countdownSeconds: 3,
       totalWarningSeconds: 3,
       initiatedAt: Date.now(),
@@ -393,20 +398,20 @@ class GameSyncService {
 
     this.state.currentEnemyAttack = attack;
 
-    // Phát còi báo động khẩn cấp trên loa máy Admin
+    // Phát tiếng còi báo động khẩn cấp trên loa Admin (không đọc số 3,2,1)
     soundService.playEnemyAlarm();
 
     this.addLiveEvent(
-      `🚨 [ĐỊCH PHẢN KÍCH] "${randomEvent.eventName}"! Mục tiêu: ${leadingTeam.name}! Va chạm sau 3s... Kíp lái chuẩn bị Khiên!`,
+      `🚨 [ĐỊCH PHẢN KÍCH] "${randomEvent.eventName}" đang ngắm bắn ${selectedTeam.name}! Hãy bật Khiên ngay!`,
       'attack',
-      leadingTeam.id
+      selectedTeam.id
     );
 
     this.saveAndBroadcast();
   }
 
   // ==========================================
-  // TACTICAL CHESS: HÒM TIẾP VIỆN DÃ CHIẾN (GIÀNH ĐỒ)
+  // THẢ TIẾP TẾ / THẢ THÍNH (TỰ ĐỘNG 30S & ADMIN BẤM DELAY 10S)
   // ==========================================
   public spawnSupplyDraftDrop() {
     if (this.state.roomState.phase !== 'BATTLE') return;
@@ -415,7 +420,7 @@ class GameSyncService {
       {
         type: 'DAVIS_SHIELD',
         name: 'Lá chắn Trại Davis',
-        description: 'Đỡ 1 đòn pháo kích của đối phương, bảo toàn kíp xe.',
+        description: 'Đỡ 1 đòn pháo kích của đối phương, bảo vệ toàn đội.',
         icon: '🛡️',
       },
       {
@@ -438,7 +443,6 @@ class GameSyncService {
       },
     ];
 
-    // Có 15% cơ hội rơi Easter Egg nếu chưa xuất hiện
     if (Math.random() < 0.15 && this.state.discoveredEasterEggs.length < 2) {
       availableItems.push({
         type: 'EASTER_COMMUNICATION_CODE',
@@ -449,7 +453,6 @@ class GameSyncService {
       });
     }
 
-    // Chọn 2 món thả vào bãi chiến trường
     const dropped: SupplyDraftItem[] = [];
     for (let i = 0; i < 2; i++) {
       const template = availableItems[Math.floor(Math.random() * availableItems.length)];
@@ -469,7 +472,7 @@ class GameSyncService {
     soundService.playSupplyDrop();
 
     this.addLiveEvent(
-      '📦 [HÒM TIẾP VIỆN DÃ CHIẾN] Đã được thả dù xuống sa bàn! Các kíp lái hãy nhanh tay trưng dụng!',
+      '📦 [HÒM TIẾP TẾ ĐÃ RƠI] Hộp đồ đã rơi xuống sa bàn! Click nhanh vào hộp để nhận quà!',
       'info'
     );
 
@@ -477,56 +480,67 @@ class GameSyncService {
   }
 
   /**
-   * Kiểm tra quy tắc độc quyền vật phẩm:
-   * "Mỗi món trong 1 đội chỉ có 1 người giữ"
+   * Admin chủ động bấm thả thính (delay tối thiểu 10s giữa 2 lần)
    */
+  public manualDropSupplyDraft(): { success: boolean; message: string } {
+    const now = Date.now();
+    const lastTime = this.state.roomState.lastManualAirdropAt || 0;
+    const cooldown = 10000; // 10 giây
+
+    if (now - lastTime < cooldown) {
+      const remainingSeconds = Math.ceil((cooldown - (now - lastTime)) / 1000);
+      return { success: false, message: `Vui lòng chờ thêm ${remainingSeconds}s nữa trước khi thả thính tiếp!` };
+    }
+
+    this.state.roomState.lastManualAirdropAt = now;
+    this.spawnSupplyDraftDrop();
+    return { success: true, message: 'Đã thả hòm tiếp tế thành công xuống sa bàn!' };
+  }
+
   public isItemTypeHeldByTeam(teamId: TeamId, itemType: ItemType): boolean {
     const teamPlayers = this.state.players.filter((p) => p.teamId === teamId);
     return teamPlayers.some((p) => p.inventory.some((i) => i.type === itemType));
   }
 
   /**
-   * Người chơi nhặt/giành đồ từ Hòm tiếp viện dã chiến
+   * Click trực tiếp vào hộp tiếp tế để nhận đồ
    */
   public claimDraftItem(draftId: string, playerId: string): { success: boolean; message: string } {
     const draftIndex = this.state.supplyDraftPool.findIndex((d) => d.id === draftId);
     if (draftIndex === -1) {
-      return { success: false, message: 'Vật phẩm đã bị người khác nhanh tay lấy mất!' };
+      return { success: false, message: 'Hộp tiếp tế đã có người khác nhanh tay lấy rồi!' };
     }
 
     const player = this.state.players.find((p) => p.id === playerId);
     if (!player) {
-      return { success: false, message: 'Không tìm thấy thông tin chiến sĩ!' };
+      return { success: false, message: 'Không tìm thấy thông tin thành viên!' };
     }
 
     const draftItem = this.state.supplyDraftPool[draftIndex];
 
-    // Quy tắc: Trong đội chưa ai được giữ loại vật phẩm này
     if (this.isItemTypeHeldByTeam(player.teamId, draftItem.item.type)) {
       return {
         success: false,
-        message: `Đội bạn đã có chiến sĩ đang giữ [${draftItem.item.name}]. Hãy sử dụng trước khi nhặt thêm!`,
+        message: `Đội bạn đã có người giữ [${draftItem.item.name}]. Hãy sử dụng trước khi nhận thêm!`,
       };
     }
 
-    // Nhặt thành công!
     player.inventory.push(draftItem.item);
     this.state.supplyDraftPool.splice(draftIndex, 1);
 
-    // Nếu là Easter Egg: lưu vào danh sách đã phát hiện trong trận
     if (draftItem.item.isEasterEgg) {
       if (!this.state.discoveredEasterEggs.some((e) => e.type === draftItem.item.type)) {
         this.state.discoveredEasterEggs.push(draftItem.item);
       }
       this.addLiveEvent(
-        `🌟 [BẢO VẬT HIẾM] ${player.name} (${this.getTeamName(player.teamId)}) đã phát hiện Easter Egg: [${draftItem.item.name}]!`,
+        `🌟 [EASTER EGG] ${player.name} (${this.getTeamName(player.teamId)}) đã mở được: [${draftItem.item.name}]!`,
         'easter_egg',
         player.teamId,
         player.name
       );
     } else {
       this.addLiveEvent(
-        `📦 ${player.name} (${this.getTeamName(player.teamId)}) đã nhanh tay giành được [${draftItem.item.name}]!`,
+        `📦 ${player.name} (${this.getTeamName(player.teamId)}) đã nhận [${draftItem.item.name}]!`,
         'boost',
         player.teamId,
         player.name
@@ -535,11 +549,11 @@ class GameSyncService {
 
     soundService.playBoost();
     this.saveAndBroadcast();
-    return { success: true, message: `Bạn đã giành được [${draftItem.item.name}]!` };
+    return { success: true, message: `Bạn đã nhận [${draftItem.item.name}]!` };
   }
 
   // ==========================================
-  // XỬ LÝ TRẢ LỜI CÂU HỎI (THƯỞNG & PHẠT KÍP LÁI)
+  // XỬ LÝ TRẢ LỜI CÂU HỎI
   // ==========================================
   public answerQuestion(
     playerId: string,
@@ -565,17 +579,15 @@ class GameSyncService {
         player.maxStreak = player.currentStreak;
       }
 
-      // Tính điểm cơ bản + chuỗi streak
       let basePoints = 10;
       if (player.currentStreak >= 3) basePoints += 5;
       if (player.currentStreak >= 5) basePoints += 10;
 
-      // Nhân đôi nếu có Mệnh lệnh Thần tốc
       if (player.isSpeedBoostActive) {
         basePoints *= 2;
         player.isSpeedBoostActive = false;
         this.addLiveEvent(
-          `⚡ ${player.name} bứt phá [Mệnh lệnh Thần tốc] nhân đôi điểm số (+${basePoints}đ)!`,
+          `⚡ ${player.name} nhân đôi điểm số thành công (+${basePoints}đ)!`,
           'boost',
           team.id,
           player.name
@@ -586,33 +598,28 @@ class GameSyncService {
       player.score += points;
       team.totalScore += points;
 
-      // Đẩy tiến độ xe tăng (1.5% - 2.5%)
       const progressDelta = 2;
       team.progress = Math.min(100, team.progress + progressDelta);
 
-      // Roll vật phẩm ngẫu nhiên khi đạt Streak 3, 5, 7...
       if (player.currentStreak % 3 === 0) {
         rolledItem = this.rollItemForPlayer(player);
       }
 
-      // Xóa đáp án loại bỏ của Easter Egg sau khi trả lời
       player.eliminatedOptions = undefined;
 
-      // Kiểm tra chiến thắng 100%
       if (team.progress >= 100) {
         this.triggerVictory(team.id, player.name);
       }
     } else {
       soundService.playWrong();
 
-      // CƠ CHẾ PHẠT: Nếu đang bật x2 mà trả lời sai -> Bị phạt trừ 10% điểm!
       if (player.isSpeedBoostActive) {
         const penalty = Math.round(player.score * 0.1);
         player.score = Math.max(0, player.score - penalty);
         team.totalScore = Math.max(0, team.totalScore - penalty);
         player.isSpeedBoostActive = false;
         this.addLiveEvent(
-          `⚠️ ${player.name} thất bại khi kích hoạt [Mệnh lệnh Thần tốc], bị trừ -${penalty} điểm!`,
+          `⚠️ ${player.name} trả lời sai khi kích hoạt x2, bị trừ -${penalty} điểm!`,
           'info',
           team.id,
           player.name
@@ -627,13 +634,8 @@ class GameSyncService {
     return { pointsEarned: points, streak: player.currentStreak, rolledItem };
   }
 
-  /**
-   * Roll vật phẩm có kiểm tra tính độc quyền đội
-   */
   private rollItemForPlayer(player: PlayerState): BoostItem | undefined {
     const candidateTypes: ItemType[] = ['DAVIS_SHIELD', 'TRUONG_SON_LOGISTICS', 'RAPID_DISPATCH', 'SMOKE_SCREEN'];
-
-    // Lọc những loại mà đội CHƯA ai giữ
     const eligibleTypes = candidateTypes.filter((type) => !this.isItemTypeHeldByTeam(player.teamId, type));
     if (eligibleTypes.length === 0) return undefined;
 
@@ -656,7 +658,7 @@ class GameSyncService {
           id: 'item_' + Date.now(),
           type: 'TRUONG_SON_LOGISTICS',
           name: 'Tiếp viện Trường Sơn',
-          description: '+5% tiến độ xe tăng thần tốc.',
+          description: '+5% tiến độ xe tăng.',
           icon: '⛽',
           acquiredAt: Date.now(),
         };
@@ -686,7 +688,7 @@ class GameSyncService {
 
     player.inventory.push(item);
     this.addLiveEvent(
-      `🎖️ ${player.name} đạt Streak ${player.currentStreak} 🔥 được Chỉ Huy Sở cấp [${item.name}]!`,
+      `🎖️ ${player.name} đạt chuỗi ${player.currentStreak} 🔥 được tặng [${item.name}]!`,
       'boost',
       player.teamId,
       player.name
@@ -696,7 +698,7 @@ class GameSyncService {
   }
 
   // ==========================================
-  // SỬ DỤNG VẬT PHẨM (MỤC TIÊU BẢO VỆ & HỖ TRỢ)
+  // SỬ DỤNG VẬT PHẨM
   // ==========================================
   public useItem(playerId: string, itemId: string, currentQuestion?: Question): boolean {
     const player = this.state.players.find((p) => p.id === playerId);
@@ -709,7 +711,6 @@ class GameSyncService {
     const team = this.state.teams.find((t) => t.id === player.teamId);
     if (!team) return false;
 
-    // Sử dụng là hàng dùng 1 lần -> gỡ khỏi túi đồ ngay
     player.inventory.splice(itemIndex, 1);
     soundService.playBoost();
 
@@ -718,7 +719,6 @@ class GameSyncService {
         team.hasShield = true;
         team.shieldCount = 1;
 
-        // Nếu xe đang bị địch ngắm bắn: Đỡ đòn ngay lập tức!
         if (
           this.state.currentEnemyAttack &&
           this.state.currentEnemyAttack.targetTeamId === team.id &&
@@ -729,14 +729,14 @@ class GameSyncService {
           team.shieldCount = 0;
           soundService.playShieldBlock();
           this.addLiveEvent(
-            `🛡️ KÍP LÁI BẢO TOÀN! ${player.name} kịp thời bật [Lá chắn Trại Davis] hóa giải pháo kích địch!`,
+            `🛡️ BẢO VỆ THÀNH CÔNG! ${player.name} kịp thời bật [Lá chắn Trại Davis] hóa giải pháo kích địch!`,
             'defense',
             team.id,
             player.name
           );
         } else {
           this.addLiveEvent(
-            `🛡️ ${player.name} đã dựng [Lá chắn Trại Davis] sẵn sàng đón đỡ pháo kích địch!`,
+            `🛡️ ${player.name} đã bật [Lá chắn Trại Davis] sẵn sàng đón đỡ pháo kích địch!`,
             'defense',
             team.id,
             player.name
@@ -748,7 +748,7 @@ class GameSyncService {
       case 'TRUONG_SON_LOGISTICS': {
         team.progress = Math.min(100, team.progress + 5);
         this.addLiveEvent(
-          `⛽ [Tiếp viện Trường Sơn] bơm nhiên liệu! ${team.name} bứt phá thêm +5% tiến độ!`,
+          `⛽ [Tiếp viện Trường Sơn] bổ sung nhiên liệu! ${team.name} tăng thêm +5% tiến độ!`,
           'boost',
           team.id,
           player.name
@@ -771,14 +771,13 @@ class GameSyncService {
       }
 
       case 'SMOKE_SCREEN': {
-        // Hóa giải choáng váng toàn bộ thành viên trong đội
         this.state.players
           .filter((p) => p.teamId === team.id)
           .forEach((p) => {
             p.isShellShocked = false;
           });
         this.addLiveEvent(
-          `💨 ${player.name} tung [Màn khói Ngụy trang] che mắt địch và hồi phục kíp xe!`,
+          `💨 ${player.name} tung [Màn khói Ngụy trang] hóa giải choáng cho toàn đội!`,
           'defense',
           team.id,
           player.name
@@ -787,7 +786,6 @@ class GameSyncService {
       }
 
       case 'EASTER_COMMUNICATION_CODE': {
-        // Loại bỏ 2 đáp án sai cho câu hỏi hiện tại
         if (currentQuestion) {
           const keys: AnswerKey[] = ['A', 'B', 'C', 'D'];
           const wrongKeys = keys.filter((k) => k !== currentQuestion.correctAnswer);
@@ -812,7 +810,7 @@ class GameSyncService {
             p.isShellShocked = false;
           });
         this.addLiveEvent(
-          `🚩 [CỜ THÊU QUYẾT THẮNG] Nhuệ khí ngút trời! Toàn đội ${team.name} nhận +100 điểm danh dự!`,
+          `🚩 [CỜ THÊU TOÀN THẮNG] Toàn đội ${team.name} nhận ngay +100 điểm!`,
           'easter_egg',
           team.id,
           player.name
@@ -826,27 +824,23 @@ class GameSyncService {
   }
 
   // ==========================================
-  // ĐIỀU KHIỂN PHÒNG & CHIẾN DỊCH
+  // ĐIỀU KHIỂN PHÒNG
   // ==========================================
   public registerPlayer(playerData: {
     id: string;
     name: string;
     studentCode?: string;
     teamId: TeamId;
-    role?: CrewRole;
+    role?: string;
   }): PlayerState {
     const existingIndex = this.state.players.findIndex((p) => p.id === playerData.id);
-
-    // Tự động phân chia vai trò kíp lái nếu chưa có
-    const teamMembers = this.state.players.filter((p) => p.teamId === playerData.teamId);
-    const assignedRole = playerData.role || this.assignCrewRole(teamMembers.length);
 
     const newPlayer: PlayerState = {
       id: playerData.id,
       name: playerData.name.trim(),
       studentCode: playerData.studentCode?.trim(),
       teamId: playerData.teamId,
-      role: assignedRole,
+      role: playerData.role || 'Thành viên',
       score: existingIndex !== -1 ? this.state.players[existingIndex].score : 0,
       currentStreak: 0,
       maxStreak: existingIndex !== -1 ? this.state.players[existingIndex].maxStreak : 0,
@@ -864,11 +858,6 @@ class GameSyncService {
     this.updateTeamMemberCounts();
     this.saveAndBroadcast();
     return newPlayer;
-  }
-
-  private assignCrewRole(memberIndex: number): CrewRole {
-    const roles: CrewRole[] = ['COMMANDER', 'GUNNER', 'DRIVER', 'LOADER', 'RADIO'];
-    return roles[memberIndex % roles.length];
   }
 
   public setPhase(phase: GamePhase) {
@@ -890,11 +879,10 @@ class GameSyncService {
 
     this.state.currentEnemyAttack = null;
     this.state.supplyDraftPool = [];
-    this.state.discoveredEasterEggs = []; // Xóa các Easter Egg đã xuất hiện khi reset
+    this.state.discoveredEasterEggs = [];
 
     this.state.teams = JSON.parse(JSON.stringify(INITIAL_TEAMS_CONFIG));
 
-    // Reset chỉ số chiến sĩ
     this.state.players.forEach((p) => {
       p.score = 0;
       p.currentStreak = 0;
@@ -935,7 +923,6 @@ class GameSyncService {
   private endBattleByTimeout() {
     if (this.state.roomState.phase === 'FINISHED') return;
 
-    // Tính đội có tiến độ cao nhất (hoặc điểm cao nhất) làm đội thắng
     const sortedTeams = [...this.state.teams].sort((a, b) => {
       if (b.progress !== a.progress) return b.progress - a.progress;
       return b.totalScore - a.totalScore;
@@ -946,7 +933,7 @@ class GameSyncService {
   }
 
   // ==========================================
-  // AI BOTS GIẢ LẬP 18 CHIẾN SĨ
+  // AI BOTS GIẢ LẬP
   // ==========================================
   public toggleBots(): boolean {
     const nextState = !this.state.roomState.isBotActive;
@@ -960,7 +947,7 @@ class GameSyncService {
             id: botId,
             name: `${bp.name} (Bot)`,
             teamId: bp.teamId,
-            role: bp.role,
+            role: 'Thành viên',
             score: 0,
             currentStreak: 0,
             maxStreak: 0,
@@ -973,7 +960,7 @@ class GameSyncService {
       });
       this.updateTeamMemberCounts();
       this.startBotLoop();
-      this.addLiveEvent('🤖 18 Học viên ảo đã gia nhập kíp lái 6 cánh quân để thao diễn!', 'info');
+      this.addLiveEvent('🤖 18 Học viên ảo đã tham gia 6 nhóm để thao diễn!', 'info');
     } else {
       this.stopBotLoop();
       this.state.players = this.state.players.filter((p) => !p.isBot);
@@ -994,11 +981,9 @@ class GameSyncService {
       const botPlayers = this.state.players.filter((p) => p.isBot);
       if (botPlayers.length === 0) return;
 
-      // Chọn ngẫu nhiên 1 bot hành động
       const randomBot = botPlayers[Math.floor(Math.random() * botPlayers.length)];
-      const isCorrect = Math.random() < 0.75; // Tỷ lệ đúng 75%
+      const isCorrect = Math.random() < 0.75;
 
-      // Bot tự động dùng khiên nếu đội mình đang bị ngắm bắn
       const botTeam = this.state.teams.find((t) => t.id === randomBot.teamId);
       if (
         this.state.currentEnemyAttack &&
@@ -1012,10 +997,8 @@ class GameSyncService {
         }
       }
 
-      // Trả lời câu hỏi
       this.answerQuestion(randomBot.id, 'q_bot', 'A', isCorrect);
 
-      // Bot nhặt hòm tiếp viện nếu có
       if (this.state.supplyDraftPool.length > 0 && Math.random() < 0.4) {
         const draft = this.state.supplyDraftPool[0];
         this.claimDraftItem(draft.id, randomBot.id);
@@ -1030,9 +1013,6 @@ class GameSyncService {
     }
   }
 
-  // ==========================================
-  // TIỆN ÍCH HỖ TRỢ
-  // ==========================================
   private updateTeamMemberCounts() {
     this.state.teams.forEach((team) => {
       team.memberCount = this.state.players.filter((p) => p.teamId === team.id).length;
@@ -1061,7 +1041,7 @@ class GameSyncService {
 
   public setCustomQuestions(questions: Question[]) {
     this.state.customQuestions = questions;
-    this.addLiveEvent(`📚 Chỉ Huy Sở đã cập nhật bộ đề tác chiến gồm ${questions.length} câu hỏi!`, 'info');
+    this.addLiveEvent(`📚 Đã cập nhật ${questions.length} câu hỏi mới!`, 'info');
     this.saveAndBroadcast();
   }
 

@@ -1,9 +1,9 @@
 /**
- * THẦN TỐC 1975 - CẤU HÌNH ADMIN, 6 CÁNH QUÂN, KÍP LÁI VÀ SỰ KIỆN LỊCH SỬ CHÂN THỰC
+ * THẦN TỐC 1975 - CẤU HÌNH ADMIN, 6 CÁNH QUÂN VÀ SỰ KIỆN LỊCH SỬ CHÂN THỰC
  * Phục vụ thuyết trình Chủ đề 6 môn VNR202 (Đại học FPT)
  */
 
-import { BoostItem, CrewRoleInfo, HistoricalMilestone, TeamState } from '../types/game';
+import { BoostItem, HistoricalMilestone, TeamState } from '../types/game';
 
 export const ADMIN_CONFIG = {
   roleName: 'Chỉ Huy Sở - Bộ Chỉ huy Chiến dịch Hồ Chí Minh',
@@ -11,42 +11,6 @@ export const ADMIN_CONFIG = {
   defaultUsername: import.meta.env.VITE_ADMIN_USERNAME || 'admin_nhom6',
   defaultPassword: import.meta.env.VITE_ADMIN_PASSWORD || '30041975',
 };
-
-/**
- * 5 Vị trí Kíp lái xe tăng (Co-op Tank Crew)
- */
-export const CREW_ROLES: CrewRoleInfo[] = [
-  {
-    role: 'COMMANDER',
-    title: 'Trưởng xe',
-    badge: '⭐',
-    description: 'Chỉ huy kíp xe, quyết định thời điểm kích hoạt Lá chắn Trại Davis để bảo vệ xe.',
-  },
-  {
-    role: 'GUNNER',
-    title: 'Pháo thủ',
-    badge: '🎯',
-    description: 'Ngắm bắn mục tiêu trắc nghiệm chuẩn xác, duy trì chuỗi Streak rực lửa.',
-  },
-  {
-    role: 'DRIVER',
-    title: 'Lái xe',
-    badge: '🚀',
-    description: 'Thần tốc vượt địa hình, đạp ga đưa xe tăng vượt qua các điểm chốt.',
-  },
-  {
-    role: 'LOADER',
-    title: 'Nạp đạn',
-    badge: '⚡',
-    description: 'Bảo đảm hỏa lực liên tục, chuẩn bị cho các đợt bứt phá điểm số x2.',
-  },
-  {
-    role: 'RADIO',
-    title: 'Thông tin',
-    badge: '📻',
-    description: 'Bắt sóng chỉ huy, cảnh báo sớm các đợt tập kích pháo của đối phương.',
-  },
-];
 
 /**
  * Danh sách 6 Đội đua đại diện 6 cánh quân lịch sử
@@ -179,66 +143,66 @@ export const HISTORICAL_MILESTONES: HistoricalMilestone[] = [
  */
 export const HISTORICAL_COUNTER_ATTACKS = [
   {
-    eventName: 'Tử thủ phòng tuyến ngã ba Dầu Giây - Xuân Lộc',
-    historicalDetail: 'Sư đoàn 18 VNCH tử thủ quyết liệt tại cánh cửa thép ngõ phía Đông, tập trung hỏa lực pháo binh và không quân phản kích.',
+    eventName: 'Phòng tuyến ngã ba Dầu Giây - Xuân Lộc',
+    historicalDetail: 'Sư đoàn 18 đối phương tử thủ tại cửa ngõ phía Đông, tập trung pháo binh bắn chặn.',
   },
   {
-    eventName: 'Pháo binh đối phương phản kích tại Đèo An Khê - Chư Pao',
-    historicalDetail: 'Hỏa lực pháo binh tầm xa của đối phương bắn chặn hòng làm chậm bước tiến của Binh đoàn Tây Nguyên.',
+    eventName: 'Pháo binh đối phương tại Đèo An Khê - Chư Pao',
+    historicalDetail: 'Hỏa lực pháo binh đối phương bắn chặn hòng cản bước tiến của Binh đoàn Tây Nguyên.',
   },
   {
-    eventName: 'Cụm phòng ngự Căn cứ Nước Trong - Thiết giáp Long Bình',
-    historicalDetail: 'Cụm xe tăng M48 và bộ binh địch tại ngã ba Biên Hòa điên cuồng nã đạn nhằm cản bước Quân đoàn 2.',
+    eventName: 'Cụm phòng ngự Căn cứ Nước Trong - Long Bình',
+    historicalDetail: 'Cụm thiết giáp và bộ binh đối phương ở ngã ba Biên Hòa nã pháo ngăn chặn.',
   },
   {
     eventName: 'Không quân đối phương oanh tạc cắt cầu Bến Lức',
-    historicalDetail: 'Phi đội máy bay ném bom đối phương oanh kích nhằm cắt đứt cầu phao và đường tiến quân của Đoàn 232.',
+    historicalDetail: 'Phi đội máy bay ném bom đối phương oanh kích nhằm cắt cầu tiến quân của Đoàn 232.',
   },
   {
     eventName: 'Pháo đài bến cảng Hải quân Sơn Trà kháng cự',
-    historicalDetail: 'Hỏa lực pháo bờ biển đối phương bắn chặn dữ dội vào đội hình thọc sâu ven biển của quân ta.',
+    historicalDetail: 'Hỏa lực pháo bờ biển đối phương bắn chặn đội hình thọc sâu ven biển của quân ta.',
   },
 ];
 
 /**
- * Danh sách toàn bộ Vật phẩm & Easter Eggs (Để quản lý và hiển thị hướng dẫn)
+ * Danh sách Vật phẩm & Tiếp Tế (Dễ hiểu, đơn giản)
  */
 export const ALL_POWER_UPS: Omit<BoostItem, 'id' | 'acquiredAt'>[] = [
   {
     type: 'DAVIS_SHIELD',
     name: 'Lá chắn Trại Davis',
-    description: 'Kích hoạt vòng phòng hộ thép, hóa giải hoàn toàn 1 đợt pháo kích hoặc tập kích của đối phương.',
+    description: 'Chặn đứng 1 đợt pháo kích của đối phương, bảo vệ toàn đội an toàn.',
     icon: '🛡️',
   },
   {
     type: 'TRUONG_SON_LOGISTICS',
     name: 'Tiếp viện Trường Sơn',
-    description: 'Tăng cường nhiên liệu xăng dầu dã chiến, lập tức đẩy tiến độ xe tăng lên thêm +5%.',
+    description: 'Bổ sung xăng dầu, giúp xe tăng của đội tăng thêm +5% tiến độ.',
     icon: '⛽',
   },
   {
     type: 'RAPID_DISPATCH',
     name: 'Mệnh lệnh Thần tốc',
-    description: 'Thần tốc hơn nữa: Nhân đôi (+100%) điểm cho câu trả lời đúng tiếp theo. Nếu sai: bị phạt -10% điểm!',
+    description: 'Nhân đôi (+100%) điểm cho câu trả lời đúng tiếp theo. Nếu sai bị phạt -10% điểm!',
     icon: '⚡',
   },
   {
     type: 'SMOKE_SCREEN',
     name: 'Màn khói Ngụy trang',
-    description: 'Tung khói mù giải trừ ngay hiệu ứng choáng váng do trúng đạn và miễn nhiễm pháo kích trong 5s.',
+    description: 'Hóa giải ngay trạng thái choáng váng khi bị trúng đạn và bảo vệ xe.',
     icon: '💨',
   },
   {
     type: 'EASTER_COMMUNICATION_CODE',
     name: 'Bản Mật Mã Cơ Yếu 1975',
-    description: '[EASTER EGG] Cơ yếu Trung ương giải mã: Loại bỏ ngay 2 đáp án sai cho câu hỏi trắc nghiệm hiện tại.',
+    description: '[EASTER EGG] Giúp loại bỏ ngay 2 đáp án sai cho câu hỏi hiện tại.',
     icon: '📻',
     isEasterEgg: true,
   },
   {
     type: 'EASTER_VICTORY_BANNER',
-    name: 'Cờ Thêu Quyết Chiến Toàn Thắng',
-    description: '[EASTER EGG] Cờ lệnh tiếp thêm nhuệ khí: Thưởng ngay +100 điểm danh dự cho toàn đội và hồi phục kíp lái.',
+    name: 'Cờ Thêu Toàn Thắng',
+    description: '[EASTER EGG] Thưởng ngay +100 điểm cho toàn đội và hóa giải choáng.',
     icon: '🚩',
     isEasterEgg: true,
   },

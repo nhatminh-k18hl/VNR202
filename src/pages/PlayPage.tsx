@@ -4,42 +4,34 @@ import {
   ArrowLeft, 
   Flame, 
   Shield, 
-  User, 
-  CheckCircle, 
-  AlertTriangle, 
   Check, 
   X,
   Volume2, 
   VolumeX, 
   Clock,
-  Sparkles,
   Package,
-  Radio,
-  Zap,
   HelpCircle,
-  EyeOff
+  AlertTriangle
 } from 'lucide-react';
-import { AnswerKey, BoostItem, CrewRole, PlayerState, Question, TeamId, TeamState } from '../types/game';
-import { CREW_ROLES, INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
+import { AnswerKey, BoostItem, PlayerState, Question, TeamId, TeamState } from '../types/game';
+import { INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
 import { fetchAndParseQuestions } from '../utils/markdownParser';
 import { FullGameState, gameSyncService } from '../services/gameSyncService';
 import { soundService } from '../services/soundService';
 
 export const PlayPage: React.FC = () => {
-  // Đồng bộ toàn cục
   const [gameState, setGameState] = useState<FullGameState>(gameSyncService.getState());
   const [isMuted, setIsMuted] = useState<boolean>(soundService.getMuted());
 
-  // Trạng thái tham gia
+  // Trạng thái tham gia (chỉ cần Họ tên + Chọn nhóm)
   const [isJoined, setIsJoined] = useState<boolean>(false);
   const [selectedTeamId, setSelectedTeamId] = useState<TeamId>('team_1');
-  const [selectedRole, setSelectedRole] = useState<CrewRole>('GUNNER');
   const [playerName, setPlayerName] = useState<string>('');
   const [studentCode, setStudentCode] = useState<string>('');
   const [playerId, setPlayerId] = useState<string>('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Bộ câu hỏi & Thời gian đếm ngược 18s cho mỗi câu
+  // Bộ câu hỏi & Thời gian 18s cho mỗi câu
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState<number>(0);
   const [selectedAnswer, setSelectedAnswer] = useState<AnswerKey | null>(null);
@@ -47,13 +39,13 @@ export const PlayPage: React.FC = () => {
   const [questionTimeRemaining, setQuestionTimeRemaining] = useState<number>(18);
   const [explanationCountdown, setExplanationCountdown] = useState<number | null>(null);
 
-  // Thông báo phản hồi thao tác nhanh
+  // Toast thông báo
   const [feedbackToast, setFeedbackToast] = useState<{ message: string; type: 'success' | 'warn' } | null>(null);
 
   const questionTimerRef = useRef<any>(null);
   const countdownTimerRef = useRef<any>(null);
 
-  // Đọc danh tính đã lưu trong phiên trước
+  // Đọc danh tính đã lưu
   useEffect(() => {
     const savedId = localStorage.getItem('than_toc_player_id');
     const savedName = localStorage.getItem('than_toc_player_name');
@@ -68,7 +60,7 @@ export const PlayPage: React.FC = () => {
     }
   }, []);
 
-  // Lắng nghe cập nhật chiến trường từ gameSyncService
+  // Lắng nghe cập nhật chiến trường
   useEffect(() => {
     const unsubscribe = gameSyncService.subscribe((newState) => {
       setGameState(newState);
@@ -79,7 +71,7 @@ export const PlayPage: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Tải câu hỏi mặc định nếu chưa có
+  // Tải câu hỏi mặc định
   useEffect(() => {
     if (questions.length === 0) {
       fetchAndParseQuestions('./questions.md')
@@ -93,9 +85,8 @@ export const PlayPage: React.FC = () => {
   const currentPlayer: PlayerState | undefined = gameState.players.find((p) => p.id === playerId);
   const currentTeam: TeamState | undefined = gameState.teams.find((t) => t.id === (currentPlayer?.teamId || selectedTeamId));
 
-  // Kiểm tra xe của đội mình có đang bị địch ngắm bắn không
+  // Kiểm tra xe của đội mình có đang bị ngắm bắn không
   const isTeamUnderAttack = gameState.currentEnemyAttack?.targetTeamId === currentTeam?.id && gameState.currentEnemyAttack?.status === 'WARNING';
-  const enemyAttackCountdown = gameState.currentEnemyAttack?.countdownSeconds ?? 0;
 
   // Đếm ngược 18s cho mỗi câu hỏi khi phòng ở phase BATTLE
   useEffect(() => {
@@ -122,22 +113,6 @@ export const PlayPage: React.FC = () => {
     };
   }, [currentQIndex, isJoined, hasAnswered, gameState.roomState.phase]);
 
-  // Hỗ trợ phím tắt bàn phím: 1, 2, 3, 4 hoặc A, B, C, D
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isJoined || hasAnswered || !questions[currentQIndex]) return;
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      if (e.key === '1' || e.key.toUpperCase() === 'A') handleSelectOption('A');
-      if (e.key === '2' || e.key.toUpperCase() === 'B') handleSelectOption('B');
-      if (e.key === '3' || e.key.toUpperCase() === 'C') handleSelectOption('C');
-      if (e.key === '4' || e.key.toUpperCase() === 'D') handleSelectOption('D');
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isJoined, hasAnswered, currentQIndex, questions]);
-
   const showToast = (message: string, type: 'success' | 'warn' = 'success') => {
     setFeedbackToast({ message, type });
     setTimeout(() => setFeedbackToast(null), 3000);
@@ -146,7 +121,7 @@ export const PlayPage: React.FC = () => {
   const handleJoinBattle = (e: React.FormEvent) => {
     e.preventDefault();
     if (!playerName.trim()) {
-      setValidationError('Vui lòng điền Họ và tên chiến sĩ để nhận lệnh xuất kích!');
+      setValidationError('Vui lòng điền Họ và tên để tham gia vào đội!');
       return;
     }
 
@@ -163,7 +138,6 @@ export const PlayPage: React.FC = () => {
       name: playerName.trim(),
       studentCode: studentCode.trim() || undefined,
       teamId: selectedTeamId,
-      role: selectedRole,
     });
 
     setIsJoined(true);
@@ -226,11 +200,12 @@ export const PlayPage: React.FC = () => {
     const currentQ = questions[currentQIndex];
     const success = gameSyncService.useItem(playerId, item.id, currentQ);
     if (success) {
-      showToast(`Đã kích hoạt [${item.name}]!`);
+      showToast(`Đã dùng [${item.name}]!`);
     }
   };
 
-  const handleClaimDraftItem = (draftId: string) => {
+  // Click trực tiếp vào hộp tiếp tế để nhận đồ (không cần chữ "Nhặt ngay")
+  const handleClaimDraftBox = (draftId: string) => {
     if (!playerId) return;
     const res = gameSyncService.claimDraftItem(draftId, playerId);
     if (res.success) {
@@ -244,7 +219,7 @@ export const PlayPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      {/* Toast thông báo thao tác */}
+      {/* Toast thông báo */}
       {feedbackToast && (
         <div className={`fixed top-20 right-4 z-50 px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold border transition-all ${
           feedbackToast.type === 'success' 
@@ -255,7 +230,7 @@ export const PlayPage: React.FC = () => {
         </div>
       )}
 
-      {/* HEADER PHÒNG TÁC CHIẾN */}
+      {/* HEADER PHÒNG CHƠI */}
       <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-[#223025]">
         <Link
           to="/"
@@ -285,16 +260,16 @@ export const PlayPage: React.FC = () => {
       </div>
 
       {/* ===================================================
-          MÀN HÌNH 1: GIA NHẬP KÍP XE (FORM ĐIỀN TÊN BẮT BUỘC)
+          MÀN HÌNH 1: ĐIỀN TÊN & CHỌN NHÓM
           =================================================== */}
       {!isJoined ? (
         <div className="max-w-xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-lg space-y-6">
           <div className="text-center space-y-1.5">
             <h2 className="text-2xl font-black uppercase text-stone-900 dark:text-white">
-              Gia Nhập Kíp Xe Tăng
+              Vào Phòng Thi Đấu
             </h2>
-            <p className="text-xs text-stone-700 dark:text-stone-300">
-              Điền danh tính chiến sĩ và chọn cánh quân lịch sử để nhận phân công vị trí
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              Điền họ tên và chọn nhóm của bạn để bắt đầu
             </p>
           </div>
 
@@ -308,7 +283,7 @@ export const PlayPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1">
-                Họ và Tên Chiến Sĩ <span className="text-red-500">* (Bắt buộc)</span>
+                Họ và Tên của bạn: <span className="text-red-500">* (Bắt buộc)</span>
               </label>
               <input
                 type="text"
@@ -322,7 +297,7 @@ export const PlayPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
-                Mã Số Sinh Viên (MSSV)
+                Mã Số Sinh Viên (MSSV):
               </label>
               <input
                 type="text"
@@ -333,10 +308,10 @@ export const PlayPage: React.FC = () => {
               />
             </div>
 
-            {/* Chọn Cánh Quân (6 Đội) */}
+            {/* Chọn Nhóm (6 Đội) */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
-                Chọn Cánh Quân / Nhóm Thi Đua:
+                Chọn Nhóm Của Bạn:
               </label>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {INITIAL_TEAMS_CONFIG.map((team) => (
@@ -353,7 +328,7 @@ export const PlayPage: React.FC = () => {
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="font-black text-stone-900 dark:text-white">{team.name}</span>
-                        <span className="text-[10px] font-mono font-bold text-stone-500">#{team.tankNumber}</span>
+                        <span className="text-[10px] font-mono font-bold text-stone-500">Xe #{team.tankNumber}</span>
                       </div>
                       <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1 mt-0.5">
                         {team.corpsName}
@@ -364,35 +339,11 @@ export const PlayPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Chọn Vị Trí Trong Kíp Lái */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
-                Vị Trí Kíp Lái Ưu Tiên:
-              </label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 text-center text-xs">
-                {CREW_ROLES.map((r) => (
-                  <button
-                    type="button"
-                    key={r.role}
-                    onClick={() => setSelectedRole(r.role)}
-                    className={`p-2 rounded-xl border font-bold transition-all ${
-                      selectedRole === r.role
-                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-200 ring-1 ring-amber-500'
-                        : 'border-stone-200 dark:border-[#223025] bg-stone-50 dark:bg-[#0e1610] text-stone-600 dark:text-stone-400'
-                    }`}
-                  >
-                    <span className="text-sm block">{r.badge}</span>
-                    <span className="text-[11px]">{r.title}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <button
               type="submit"
               className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-red-600/30 transition-all"
             >
-              Vào Chiến Hào Nhận Lệnh
+              Vào Chơi
             </button>
           </form>
         </div>
@@ -401,25 +352,25 @@ export const PlayPage: React.FC = () => {
            MÀN HÌNH 2: TÁC CHIẾN THỜI GIAN THỰC
            =================================================== */
         <div className="space-y-6">
-          {/* CẢNH BÁO ĐỊCH PHẢN KÍCH (ĐẾM NGƯỢC 3S TRƯỚC KHI TRÚNG ĐẠN) */}
+          {/* CẢNH BÁO ĐỊCH ĐANG BẮN VÀO XE ĐỘI BẠN (CHỈ CÓ TIẾNG BÁO, KHÔNG ĐẾM 3,2,1) */}
           {isTeamUnderAttack && (
-            <div className="p-4 rounded-2xl bg-red-600 text-white border-2 border-amber-300 shadow-xl space-y-2 animate-pulse">
+            <div className="p-4 rounded-2xl bg-red-600 text-white border-2 border-amber-300 shadow-xl space-y-1.5 animate-pulse">
               <div className="flex items-center justify-between">
-                <span className="font-black text-xs uppercase flex items-center gap-2">
+                <span className="font-black text-xs sm:text-sm uppercase flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-amber-300 animate-bounce" />
-                  [CẢNH BÁO TÁC CHIẾN] ĐỊCH ĐANG PHẢO KÍCH XE CỦA BẠN!
+                  CẢNH BÁO: ĐỊCH ĐANG BẮN PHÁO VÀO XE ĐỘI BẠN!
                 </span>
-                <span className="font-mono text-xl font-black bg-black/40 px-3 py-0.5 rounded-lg border border-white/40">
-                  {enemyAttackCountdown}s
+                <span className="text-xs font-bold px-2 py-0.5 rounded bg-black/30 border border-white/30">
+                  Đang tới
                 </span>
               </div>
               <p className="text-xs text-red-100">
-                Sự kiện: <strong>{gameState.currentEnemyAttack?.eventName}</strong>. Bật <strong>Lá chắn Trại Davis</strong> ngay để bảo toàn kíp lái!
+                Hãy click vào <strong>[Lá chắn Trại Davis]</strong> trong túi đồ bên dưới ngay để không bị trúng đạn!
               </p>
             </div>
           )}
 
-          {/* THANH THÔNG TIN KÍP XE TĂNG & CHỈ SỐ CÁ NHÂN */}
+          {/* THANH THÔNG TIN ĐỘI & THÀNH VIÊN */}
           <div className="p-4 rounded-2xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div 
@@ -431,12 +382,9 @@ export const PlayPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-black text-sm text-stone-900 dark:text-white">{currentTeam?.name}</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300">
-                    {currentPlayer?.role ? CREW_ROLES.find(r => r.role === currentPlayer.role)?.title : 'Kíp lái'}
-                  </span>
                   {currentTeam?.hasShield && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-500">
-                      🛡️ Khiên Thép Bật
+                      🛡️ Khiên Bật
                     </span>
                   )}
                 </div>
@@ -449,17 +397,17 @@ export const PlayPage: React.FC = () => {
             {/* Chỉ số cá nhân: Điểm, Streak, Tên */}
             <div className="flex items-center gap-4 text-xs">
               <div className="text-center sm:text-right">
-                <span className="text-stone-500 dark:text-stone-400 block text-[11px]">Chiến sĩ</span>
+                <span className="text-stone-400 block text-[11px]">Thành viên</span>
                 <span className="font-black text-stone-900 dark:text-white">{currentPlayer?.name}</span>
               </div>
               <div className="h-7 w-[1px] bg-stone-200 dark:bg-stone-800" />
               <div className="text-center sm:text-right">
-                <span className="text-stone-500 dark:text-stone-400 block text-[11px]">Điểm</span>
+                <span className="text-stone-400 block text-[11px]">Điểm</span>
                 <span className="font-black text-amber-600 dark:text-amber-400 text-base">{currentPlayer?.score || 0}đ</span>
               </div>
               <div className="h-7 w-[1px] bg-stone-200 dark:bg-stone-800" />
               <div className="text-center sm:text-right">
-                <span className="text-stone-500 dark:text-stone-400 block text-[11px]">Streak</span>
+                <span className="text-stone-400 block text-[11px]">Streak</span>
                 <span className="font-black text-red-600 dark:text-red-400 text-base flex items-center gap-0.5">
                   <Flame className="w-4 h-4 fill-red-500" />
                   {currentPlayer?.currentStreak || 0}
@@ -469,39 +417,41 @@ export const PlayPage: React.FC = () => {
           </div>
 
           {/* ===================================================
-              HÒM TIẾP VIỆN THẢ DÙ (SUPPLY DRAFT - GIÀNH ĐỒ)
+              HỘP TIẾP TẾ THẢ DÙ (CLICK VÀO HỘP ĐỂ NHẬN ĐỒ)
               =================================================== */}
           {gameState.supplyDraftPool.length > 0 && (
             <div className="p-4 rounded-2xl bg-amber-50 dark:bg-[#1c241d] border border-amber-300 dark:border-amber-800/80 space-y-2.5 shadow-sm">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-black text-stone-900 dark:text-white flex items-center gap-1.5 uppercase">
                   <Package className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-bounce" />
-                  Hòm Tiếp Viện Thả Dù Đang Rơi (Nhanh Tay Trưng Dụng!)
+                  Hộp Tiếp Tế Vừa Rơi (Click vào hộp để nhận quà!)
                 </span>
                 <span className="text-[11px] text-stone-500 dark:text-stone-400">
-                  Mỗi đội chỉ được giữ 1 món cùng loại
+                  Mỗi đội chỉ giữ tối đa 1 món cùng loại
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Danh sách hộp quà: Click trực tiếp vào hộp để nhận */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {gameState.supplyDraftPool.map((draft) => (
                   <button
                     key={draft.id}
-                    onClick={() => handleClaimDraftItem(draft.id)}
-                    className="p-3 rounded-xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#2a3c2e] hover:border-amber-500 text-left flex items-center justify-between transition-all group shadow-sm"
+                    onClick={() => handleClaimDraftBox(draft.id)}
+                    className="p-3.5 rounded-2xl bg-white dark:bg-[#131b15] border-2 border-dashed border-amber-400 hover:border-amber-600 hover:scale-[1.02] text-left flex items-center gap-3 transition-all group shadow-sm cursor-pointer"
+                    title="Click vào hộp để nhận món đồ này cho đội"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{draft.item.icon}</span>
-                      <div>
-                        <span className="font-bold text-xs text-stone-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                          {draft.item.name}
-                        </span>
-                        <p className="text-[11px] text-stone-500 dark:text-stone-400">{draft.item.description}</p>
-                      </div>
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform">
+                      {draft.item.icon}
                     </div>
-                    <span className="text-[11px] font-black px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white whitespace-nowrap shadow-sm">
-                      Nhặt Ngay
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-black text-xs text-stone-900 dark:text-white block group-hover:text-amber-600 dark:group-hover:text-amber-400 truncate">
+                        {draft.item.name}
+                      </span>
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1">{draft.item.description}</p>
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 block">
+                        👉 Click để nhận
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -509,34 +459,32 @@ export const PlayPage: React.FC = () => {
           )}
 
           {/* ===================================================
-              KHU VỰC CÂU HỎI TRẮC NGHIỆM & PHÍM TẮT
+              KHU VỰC CÂU HỎI TRẮC NGHIỆM (CHỈ DÙNG CHUỘT)
               =================================================== */}
           <div className={`p-6 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-md space-y-5 transition-all ${
             currentPlayer?.isShellShocked ? 'shell-shocked' : ''
           }`}>
-            {/* Header câu hỏi: Số thứ tự & Đếm ngược 18s */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-[#1e2a21]">
               <span className="text-xs font-black uppercase text-stone-500">
                 Câu Hỏi #{currentQIndex + 1} / {questions.length || 1}
               </span>
 
-              {/* Đồng hồ đếm ngược câu hỏi 18s */}
+              {/* Đếm ngược 18s */}
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 font-mono font-black text-xs">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{questionTimeRemaining}s</span>
               </div>
             </div>
 
-            {/* Nội dung câu hỏi */}
             {currentQ ? (
               <div className="space-y-4">
                 <h3 className="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-relaxed">
                   {currentQ.text}
                 </h3>
 
-                {/* 4 Nút Lựa Chọn Đáp Án (Hỗ trợ phím tắt 1, 2, 3, 4 hoặc A, B, C, D) */}
+                {/* 4 Nút Lựa Chọn Đáp Án (Thao tác chuột thuần túy) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
-                  {(['A', 'B', 'C', 'D'] as AnswerKey[]).map((key, idx) => {
+                  {(['A', 'B', 'C', 'D'] as AnswerKey[]).map((key) => {
                     const isEliminated = currentPlayer?.eliminatedOptions?.includes(key);
                     const isCorrect = currentQ.correctAnswer === key;
                     const isSelected = selectedAnswer === key;
@@ -546,7 +494,7 @@ export const PlayPage: React.FC = () => {
                         key={key}
                         disabled={hasAnswered || isEliminated}
                         onClick={() => handleSelectOption(key)}
-                        className={`p-4 rounded-2xl border text-left font-semibold transition-all relative flex items-center justify-between group ${
+                        className={`p-4 rounded-2xl border text-left font-semibold transition-all relative flex items-center justify-between group cursor-pointer ${
                           isEliminated
                             ? 'opacity-35 line-through bg-stone-100 dark:bg-stone-800 text-stone-400 cursor-not-allowed'
                             : hasAnswered
@@ -560,7 +508,7 @@ export const PlayPage: React.FC = () => {
                       >
                         <div className="flex items-center gap-2.5">
                           <span className="w-6 h-6 rounded-lg bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-amber-300 font-mono font-black text-xs flex items-center justify-center flex-shrink-0 group-hover:scale-105">
-                            {idx + 1}
+                            {key}
                           </span>
                           <span>{currentQ.options[key]}</span>
                         </div>
@@ -576,7 +524,7 @@ export const PlayPage: React.FC = () => {
                   })}
                 </div>
 
-                {/* Giải thích lịch sử sau khi trả lời */}
+                {/* Giải thích sau khi trả lời */}
                 {hasAnswered && (
                   <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#0d140e] border border-stone-200 dark:border-[#223025] space-y-2 text-xs">
                     <div className="flex items-center justify-between text-stone-500">
@@ -585,7 +533,7 @@ export const PlayPage: React.FC = () => {
                       </span>
                       {explanationCountdown !== null && (
                         <span className="font-mono font-bold text-red-600 dark:text-amber-400">
-                          Câu tiếp theo sau {explanationCountdown}s...
+                          Câu tiếp sau {explanationCountdown}s...
                         </span>
                       )}
                     </div>
@@ -597,21 +545,21 @@ export const PlayPage: React.FC = () => {
               </div>
             ) : (
               <p className="text-xs text-stone-500 text-center py-6">
-                Chưa có câu hỏi tác chiến. Chỉ Huy Sở sẽ cập nhật bộ đề sớm nhất!
+                Chưa có câu hỏi. Quản trò sẽ nạp bộ câu hỏi sớm nhất!
               </p>
             )}
           </div>
 
           {/* ===================================================
-              KHO VẬT PHẨM BẢO VỆ & HỖ TRỢ TRONG TÚI
+              TÚI ĐỒ VẬT PHẨM TRONG TAY BẠN
               =================================================== */}
           <div className="p-5 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-black text-xs uppercase text-stone-900 dark:text-white flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-amber-500" /> Kho Lệnh Bài Chiến Thuật Của Bạn ({currentPlayer?.inventory.length || 0})
+                <Shield className="w-4 h-4 text-amber-500" /> Túi Đồ Của Bạn ({currentPlayer?.inventory.length || 0})
               </span>
               <span className="text-[11px] text-stone-500 dark:text-stone-400">
-                Đạt Streak 3, 5, 7... hoặc nhặt từ Hòm tiếp viện
+                Click vào món đồ để sử dụng
               </span>
             </div>
 
@@ -621,7 +569,7 @@ export const PlayPage: React.FC = () => {
                   <button
                     key={item.id}
                     onClick={() => handleUseItem(item)}
-                    className="p-3.5 rounded-2xl bg-stone-50 dark:bg-[#0d140e] border border-stone-200 dark:border-[#223025] hover:border-amber-500 text-left flex flex-col justify-between group transition-all shadow-sm"
+                    className="p-3.5 rounded-2xl bg-stone-50 dark:bg-[#0d140e] border border-stone-200 dark:border-[#223025] hover:border-amber-500 text-left flex flex-col justify-between group transition-all shadow-sm cursor-pointer"
                   >
                     <div>
                       <div className="flex items-center justify-between">
@@ -639,14 +587,14 @@ export const PlayPage: React.FC = () => {
                     </div>
 
                     <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-2 pt-1 border-t border-stone-200 dark:border-[#1e2a21] block text-right">
-                      Nhấn để kích hoạt →
+                      Click để dùng ngay →
                     </span>
                   </button>
                 ))}
               </div>
             ) : (
               <p className="text-xs text-stone-400 text-center py-3 italic">
-                Túi đồ hiện đang trống. Hãy duy trì chuỗi Streak đúng hoặc nhặt đồ từ Hòm tiếp viện dã chiến!
+                Túi đồ đang trống. Hãy trả lời đúng liên tiếp hoặc click nhặt Hộp tiếp tế thả dù!
               </p>
             )}
           </div>
