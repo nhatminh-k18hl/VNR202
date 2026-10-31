@@ -751,7 +751,7 @@ export const AdminPage: React.FC = () => {
                 Cập Nhật Bộ Câu Hỏi (Markdown)
               </h3>
               <p className="text-xs text-stone-500 dark:text-stone-400">
-                Dán câu hỏi theo định dạng: `# Câu X`, `- [x] Đáp án đúng`, `> Giải thích:`
+                Dán câu hỏi theo định dạng: {'# Câu X'}, {'- [x] Đáp án đúng'}, {'> Giải thích:'}
               </p>
             </div>
 
