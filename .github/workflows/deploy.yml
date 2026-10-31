@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
   workflow_dispatch:
 
 # Quyền hạn cấp cho GITHUB_TOKEN để triển khai lên GitHub Pages
@@ -40,7 +41,7 @@ jobs:
         run: npm run build
 
       - name: Cấu hình GitHub Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v4
 
       - name: Nén và tải lên artifact từ thư mục ./dist
         uses: actions/upload-pages-artifact@v3

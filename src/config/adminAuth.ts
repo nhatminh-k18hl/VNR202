@@ -1,13 +1,10 @@
 /**
- * THẦN TỐC 1975 - CẤU HÌNH ADMIN, DANH SÁCH 6 ĐỘI ĐUA VÀ CỘT MỐC LỊCH SỬ
+ * THẦN TỐC 1975 - CẤU HÌNH ADMIN, 6 CÁNH QUÂN VÀ 5 MỐC LỊCH SỬ SA BÀN
  * Phục vụ thuyết trình Chủ đề 6 môn VNR202 (Đại học FPT)
  */
 
 import { HistoricalMilestone, TeamState } from '../types/game';
 
-/**
- * Thông tin Quản trị viên Chỉ Huy Sở (Nhóm 6 - BTC lớp)
- */
 export const ADMIN_CONFIG = {
   roleName: 'Chỉ Huy Sở - Bộ Chỉ huy Chiến dịch Hồ Chí Minh',
   groupName: 'Nhóm 6 (VNR202)',
@@ -16,10 +13,7 @@ export const ADMIN_CONFIG = {
 };
 
 /**
- * Danh sách 6 Đội đua tương ứng với 6 Nhóm sinh viên trong lớp:
- * - 5 Cánh quân thần tốc lịch sử năm 1975
- * - Cánh quân thứ 6: Mũi đột kích Đặc công - Biệt động thành & Hải quân giải phóng Trường Sa
- * (Nhóm 6 là Admin/BTC, không tham gia vào danh sách 6 đội đua)
+ * Danh sách 6 Đội đua đại diện 6 cánh quân lịch sử
  */
 export const INITIAL_TEAMS_CONFIG: TeamState[] = [
   {
@@ -27,8 +21,8 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     name: 'Nhóm 1',
     corpsName: 'Quân đoàn 1 - Binh đoàn Quyết Thắng',
     axisName: 'Cánh quân hướng Bắc',
-    color: '#EF4444', // Red 500
-    badgeIcon: 'ShieldAlert',
+    tankNumber: '843',
+    color: '#EF4444', // Red
     progress: 0,
     totalScore: 0,
     memberCount: 0,
@@ -39,8 +33,8 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     name: 'Nhóm 2',
     corpsName: 'Quân đoàn 2 - Binh đoàn Hương Giang',
     axisName: 'Cánh quân hướng Đông Nam',
-    color: '#3B82F6', // Blue 500
-    badgeIcon: 'Zap',
+    tankNumber: '390',
+    color: '#3B82F6', // Blue
     progress: 0,
     totalScore: 0,
     memberCount: 0,
@@ -51,8 +45,8 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     name: 'Nhóm 3',
     corpsName: 'Quân đoàn 3 - Binh đoàn Tây Nguyên',
     axisName: 'Cánh quân hướng Tây Bắc',
-    color: '#10B981', // Emerald 500
-    badgeIcon: 'Flame',
+    tankNumber: '985',
+    color: '#10B981', // Emerald
     progress: 0,
     totalScore: 0,
     memberCount: 0,
@@ -63,8 +57,8 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
     name: 'Nhóm 4',
     corpsName: 'Quân đoàn 4 - Binh đoàn Cửu Long',
     axisName: 'Cánh quân hướng Đông',
-    color: '#F59E0B', // Amber 500
-    badgeIcon: 'Compass',
+    tankNumber: '707',
+    color: '#F59E0B', // Amber
     progress: 0,
     totalScore: 0,
     memberCount: 0,
@@ -73,10 +67,10 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
   {
     id: 'team_5',
     name: 'Nhóm 5',
-    corpsName: 'Đoàn 232 - Binh đoàn Tây Nam',
+    corpsName: 'Đoàn 232 & Biệt động Sài Gòn',
     axisName: 'Cánh quân hướng Tây Nam',
-    color: '#8B5CF6', // Purple 500
-    badgeIcon: 'Crosshair',
+    tankNumber: '256',
+    color: '#8B5CF6', // Purple
     progress: 0,
     totalScore: 0,
     memberCount: 0,
@@ -85,10 +79,10 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
   {
     id: 'team_7',
     name: 'Nhóm 7',
-    corpsName: 'Mũi Đặc công Biệt động & Hải quân Trường Sa',
-    axisName: 'Mũi đột kích nội đô & Biển đảo',
-    color: '#06B6D4', // Cyan 500
-    badgeIcon: 'Anchor',
+    corpsName: 'Cánh quân thứ 6 - Hải quân Trường Sa & Phi đội A-37',
+    axisName: 'Mũi đột kích nội đô, Biển đảo & Đường không',
+    tankNumber: '112',
+    color: '#06B6D4', // Cyan
     progress: 0,
     totalScore: 0,
     memberCount: 0,
@@ -97,46 +91,41 @@ export const INITIAL_TEAMS_CONFIG: TeamState[] = [
 ];
 
 /**
- * 5 Cột mốc lịch sử tương ứng với tiến độ tiến quân từ 0% đến 100%
+ * 5 Cột mốc lịch sử trải dài từ 0% đến 100% trên sa bàn đường đua
  */
 export const HISTORICAL_MILESTONES: HistoricalMilestone[] = [
   {
     percentage: 0,
-    title: 'Xuất Kích Thần Tốc',
-    description: 'Bức điện khẩn lịch sử của Đại tướng Võ Nguyên Giáp',
-    historicalEvent: '7/4/1975: "Thần tốc, thần tốc hơn nữa; Táo bạo, táo bạo hơn nữa; Tranh thủ từng phút, từng giờ; Xốc tới mặt trận; Giải phóng miền Nam; Quyết chiến và toàn thắng!".',
+    title: 'Hiệp Định Paris',
+    subTitle: 'Xuất kích Thần tốc',
+    historicalEvent: '1/1973 - 7/1973: Nghị quyết TW 21 khẳng định con đường bạo lực cách mạng; chuẩn bị mọi mặt cho cuộc Tổng tiến công mùa Xuân 1975.',
   },
   {
     percentage: 25,
-    title: 'Phá Vỡ Phòng Tuyến Phía Ngoài',
-    description: 'Chọc thủng "Lá chắn thép" Phan Rang và "Cửa ngõ thép" Xuân Lộc',
-    historicalEvent: '16/4 - 21/4/1975: Quân ta phá vỡ phòng tuyến Phan Rang, đập tan phòng tuyến then chốt Xuân Lộc, mở toang cửa ngõ phía Đông Bắc tiến vào Sài Gòn.',
+    title: 'Giải Phóng Phước Long',
+    subTitle: 'Đòn trinh sát chiến lược',
+    historicalEvent: '6/1/1975: Chiến thắng Phước Long chứng minh sức mạnh áp đảo của quân ta và khả năng Mỹ không thể tái can thiệp bằng quân sự.',
   },
   {
     percentage: 50,
-    title: 'Tổng Công Kích Cửa Ngõ Sài Gòn',
-    description: '5 cánh quân đồng loạt khép chặt vòng vây hợp điểm',
-    historicalEvent: '17h00 ngày 26/4/1975: Chiến dịch Hồ Chí Minh mở màn. Pháo binh ta dội bão lửa vào các căn cứ địch, 5 cánh quân dũng mãnh tiến công áp sát nội đô.',
+    title: 'Buôn Ma Thuột',
+    subTitle: 'Đòn điểm huyệt Tây Nguyên',
+    historicalEvent: '10/3/1975: Đòn giáng sấm sét giải phóng Buôn Ma Thuột, đẩy quân ngụy vào cuộc tháo chạy hoảng loạn trên Đường số 7.',
   },
   {
     percentage: 75,
-    title: 'Đột Kích Các Mục Tiêu Đầu Não',
-    description: 'Đánh chiếm sân bay Tân Sơn Nhất, Bộ Tổng Tham mưu ngụy',
-    historicalEvent: 'Sáng 30/4/1975: Các mũi thọc sâu đập tan các ổ đề kháng cuối cùng, chiếm sân bay Tân Sơn Nhất, Đài phát thanh, Biệt khu Thủ đô và Tổng nha Cảnh sát.',
+    title: 'Huế - Đà Nẵng',
+    subTitle: 'Đập tan căn cứ liên hợp',
+    historicalEvent: '26/3 - 29/3/1975: Giải phóng Huế, quét sạch căn cứ quân sự liên hợp khổng lồ tại Đà Nẵng, mở toang cửa ngõ tiến về Sài Gòn.',
   },
   {
     percentage: 100,
-    title: 'Cắm Cờ Dinh Độc Lập - Toàn Thắng',
-    description: 'Lá cờ Mặt trận Dân tộc Giải phóng tung bay trên nóc Dinh Độc Lập',
-    historicalEvent: '11 giờ 30 phút ngày 30/4/1975: Xe tăng ta húc đổ cổng Dinh Độc Lập, Tổng thống Dương Văn Minh đầu hàng không điều kiện. Miền Nam hoàn toàn giải phóng!',
+    title: 'Dinh Độc Lập',
+    subTitle: 'Đại thắng 30/4/1975',
+    historicalEvent: '11h30 ngày 30/4/1975: Xe tăng 390 và 843 húc đổ cổng Dinh Độc Lập, cắm cờ Giải phóng. Non sông Việt Nam hoàn toàn thu về một mối!',
   },
 ];
 
-/**
- * Hàm kiểm tra đăng nhập Quản trị viên
- * @param username Tên đăng nhập do người dùng nhập
- * @param password Mật khẩu do người dùng nhập
- */
 export function verifyAdminCredentials(username: string, password: string): boolean {
   const expectedUser = (import.meta.env.VITE_ADMIN_USERNAME || 'admin_nhom6').trim();
   const expectedPass = (import.meta.env.VITE_ADMIN_PASSWORD || '30041975').trim();
