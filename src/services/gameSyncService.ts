@@ -331,19 +331,13 @@ class GameSyncService {
         }
       }
 
-      // 3. Kích hoạt Đợt Phản Kích Mới Mỗi ~40 giây
-      if (loopCounter % 40 === 0 && !this.state.currentEnemyAttack) {
-        this.triggerHistoricalEnemyAttack();
-        hasChanged = true;
-      }
-
-      // 4. Mặc định tự động thả thính mỗi 30 giây (nếu không có đồ đang chờ)
+      // 3. Mặc định tự động thả thính mỗi 30 giây (kích hoạt địch phản kích sau 15s nếu đạt mốc 25%)
       if (loopCounter % 30 === 0) {
-        this.spawnSupplyDraftDrop();
+        this.spawnSupplyDraftDrop(false);
         hasChanged = true;
       }
 
-      // 5. Giải trừ hiệu ứng choáng váng hết hạn
+      // 4. Giải trừ hiệu ứng choáng váng hết hạn
       const now = Date.now();
       this.state.players.forEach((p) => {
         if (p.isShellShocked && p.shellShockExpiresAt && p.shellShockExpiresAt <= now) {
@@ -397,6 +391,7 @@ class GameSyncService {
     };
 
     this.state.currentEnemyAttack = attack;
+    this.state.roomState.lastEnemyAttackAt = Date.now();
 
     // Phát tiếng còi báo động khẩn cấp trên loa Admin (không đọc số 3,2,1)
     soundService.playEnemyAlarm();
@@ -410,10 +405,27 @@ class GameSyncService {
     this.saveAndBroadcast();
   }
 
+  /**
+   * Admin chủ động kích hoạt địch phản kích (delay tối thiểu 20s giữa các lần bất kể bấm hay tự động)
+   */
+  public manualTriggerHistoricalEnemyAttack(): { success: boolean; message: string } {
+    const now = Date.now();
+    const lastTime = this.state.roomState.lastEnemyAttackAt || 0;
+    const cooldown = 20000; // 20 giây
+
+    if (now - lastTime < cooldown) {
+      const remainingSeconds = Math.ceil((cooldown - (now - lastTime)) / 1000);
+      return { success: false, message: `Vui lòng chờ thêm ${remainingSeconds}s nữa trước khi kích hoạt phản kích!` };
+    }
+
+    this.triggerHistoricalEnemyAttack();
+    return { success: true, message: 'Đã kích hoạt đợt địch phản kích thành công!' };
+  }
+
   // ==========================================
   // THẢ TIẾP TẾ / THẢ THÍNH (TỰ ĐỘNG 30S & ADMIN BẤM DELAY 10S)
   // ==========================================
-  public spawnSupplyDraftDrop() {
+  public spawnSupplyDraftDrop(isManual: boolean = false) {
     if (this.state.roomState.phase !== 'BATTLE') return;
 
     const availableItems: Omit<BoostItem, 'id' | 'acquiredAt'>[] = [
@@ -476,6 +488,20 @@ class GameSyncService {
       'info'
     );
 
+    // Mặc định: sau 15s khi thính rơi tự động, nếu đạt mốc 25% thì địch sẽ phản kích
+    if (!isManual) {
+      setTimeout(() => {
+        if (this.state.roomState.phase !== 'BATTLE' || this.state.currentEnemyAttack) return;
+        const maxProgress = Math.max(...this.state.teams.map((t) => t.progress));
+        if (maxProgress >= 25) {
+          const timeSinceLast = Date.now() - (this.state.roomState.lastEnemyAttackAt || 0);
+          if (timeSinceLast >= 20000) {
+            this.triggerHistoricalEnemyAttack();
+          }
+        }
+      }, 15000);
+    }
+
     this.saveAndBroadcast();
   }
 
@@ -493,7 +519,7 @@ class GameSyncService {
     }
 
     this.state.roomState.lastManualAirdropAt = now;
-    this.spawnSupplyDraftDrop();
+    this.spawnSupplyDraftDrop(true);
     return { success: true, message: 'Đã thả hòm tiếp tế thành công xuống sa bàn!' };
   }
 
@@ -876,6 +902,8 @@ class GameSyncService {
     this.state.roomState.finishedAt = undefined;
     this.state.roomState.winnerTeamId = null;
     this.state.roomState.timeRemainingSeconds = 300;
+    this.state.roomState.lastManualAirdropAt = undefined;
+    this.state.roomState.lastEnemyAttackAt = undefined;
 
     this.state.currentEnemyAttack = null;
     this.state.supplyDraftPool = [];

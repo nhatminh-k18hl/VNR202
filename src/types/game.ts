@@ -137,7 +137,8 @@ export interface RoomState {
   isBotActive: boolean;
   matchDurationSeconds: number; // Mặc định 300s (5 phút)
   timeRemainingSeconds: number; // Thời gian trận đấu còn lại
-  lastManualAirdropAt?: number; // Thời điểm Admin bấm thả thính gần nhất (để delay 10s)
+  lastManualAirdropAt?: number; // Thời điểm Admin bấm thả thính gần nhất (delay 10s)
+  lastEnemyAttackAt?: number;   // Thời điểm đợt phản kích gần nhất (delay tối thiểu 20s)
 }
 
 export interface LiveBattleEvent {

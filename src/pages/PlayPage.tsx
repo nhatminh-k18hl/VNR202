@@ -303,7 +303,7 @@ export const PlayPage: React.FC = () => {
                 type="text"
                 value={studentCode}
                 onChange={(e) => setStudentCode(e.target.value)}
-                placeholder="VD: HE186934 (Không bắt buộc)"
+                placeholder="VD: HE123456 (Không bắt buộc)"
                 className="w-full px-4 py-2.5 rounded-xl border border-stone-300 dark:border-[#2a3c2e] bg-stone-50 dark:bg-[#0c120e] text-stone-900 dark:text-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-red-500 dark:focus:border-amber-400"
               />
             </div>
@@ -341,11 +341,94 @@ export const PlayPage: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-red-600/30 transition-all"
+              className="w-full py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-red-600/30 transition-all cursor-pointer"
             >
-              Vào Chơi
+              Vào Phòng Chờ
             </button>
           </form>
+        </div>
+      ) : gameState.roomState.phase === 'WAITING' ? (
+        /* ===================================================
+           MÀN HÌNH SẢNH CHỜ: HIỂN THỊ CÁC THÀNH VIÊN ĐÃ JOIN
+           =================================================== */
+        <div className="max-w-xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-lg space-y-6">
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold animate-pulse">
+              <span>⏳ Đang ở sảnh chờ... Chờ Quản Trò phát lệnh bắt đầu</span>
+            </div>
+
+            <h2 className="text-2xl font-black uppercase text-stone-900 dark:text-white flex items-center justify-center gap-2">
+              <span 
+                className="w-3.5 h-3.5 rounded-full inline-block"
+                style={{ backgroundColor: currentTeam?.color || '#2563EB' }}
+              />
+              {currentTeam?.name} • Xe #{currentTeam?.tankNumber}
+            </h2>
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              {currentTeam?.corpsName} ({currentTeam?.axisName})
+            </p>
+          </div>
+
+          {/* Danh sách thành viên trong nhóm đã join */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs pb-1 border-b border-stone-100 dark:border-[#1e2a21]">
+              <span className="font-bold text-stone-700 dark:text-stone-300">
+                Thành viên trong nhóm ({gameState.players.filter((p) => p.teamId === currentTeam?.id).length}):
+              </span>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                Tự động vào chơi khi bắt đầu
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {gameState.players
+                .filter((p) => p.teamId === currentTeam?.id)
+                .map((member, idx) => (
+                  <div
+                    key={member.id}
+                    className="p-3 rounded-xl bg-stone-50 dark:bg-[#0e1610] border border-stone-200 dark:border-[#202e23] flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-5 h-5 rounded-md bg-stone-200 dark:bg-stone-800 font-mono font-bold text-[11px] flex items-center justify-center text-stone-600 dark:text-stone-300">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <span className="font-bold text-stone-900 dark:text-white">
+                          {member.name} {member.id === playerId && <strong className="text-red-600 dark:text-amber-400 font-bold">(Bạn)</strong>}
+                        </span>
+                        {member.studentCode && (
+                          <span className="text-[11px] text-stone-400 block font-mono">MSSV: {member.studentCode}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                      Sẵn sàng
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-[#1a231b] border border-amber-200 dark:border-amber-900/60 text-xs text-stone-600 dark:text-stone-300 space-y-1">
+            <strong className="text-stone-900 dark:text-white block font-bold">💡 Lưu ý khi thi đấu:</strong>
+            <p>1. Dùng chuột click vào đáp án đúng để đưa xe tăng của nhóm tiến lên.</p>
+            <p>2. Khi có hộp tiếp tế rơi xuống, click nhanh vào hộp để lấy khiên bảo vệ xe.</p>
+          </div>
+
+          <div className="pt-2 flex items-center justify-between">
+            <button
+              onClick={() => setIsJoined(false)}
+              className="text-xs font-bold text-stone-500 hover:text-stone-900 dark:hover:text-white cursor-pointer"
+            >
+              ← Đổi Nhóm / Chỉnh Sửa Thông Tin
+            </button>
+
+            <span className="text-xs font-mono text-stone-400">
+              Mã phòng: #VNR202
+            </span>
+          </div>
         </div>
       ) : (
         /* ===================================================
