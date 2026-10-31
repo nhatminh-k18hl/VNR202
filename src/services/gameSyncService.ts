@@ -19,8 +19,10 @@ import {
   TeamState 
 } from '../types/game';
 import { soundService } from './soundService';
+import { Peer, type DataConnection } from 'peerjs';
 
 type SyncListener = (state: FullGameState) => void;
+type CountdownListener = (secondsRemaining: number) => void;
 
 export interface FullGameState {
   roomState: RoomState;
@@ -35,15 +37,29 @@ export interface FullGameState {
 
 const STORAGE_KEY = 'than_toc_1975_state_v3';
 const DB_URL_KEY = 'than_toc_1975_firebase_url';
+export const DEFAULT_HOST_ROOM_ID = 'thantoc_vnr1975';
 
 class GameSyncService {
   private channel: BroadcastChannel | null = null;
   private listeners: Set<SyncListener> = new Set();
+  private countdownListeners: Set<CountdownListener> = new Set();
   private state: FullGameState;
   private cloudDbUrl: string = '';
   private cloudPollTimer: any = null;
   private mainGameLoopTimer: any = null;
   private botTimer: any = null;
+  private countdownTimer: any = null;
+
+  // P2P WebRTC networking
+  private peer: Peer | null = null;
+  private isHost: boolean = false;
+  private networkMode: 'standalone' | 'host' | 'client' = 'standalone';
+  private hostConnections: Map<string, DataConnection> = new Map();
+  private clientConnection: DataConnection | null = null;
+  private clientReconnectTimer: any = null;
+  private p2pConnectedCount: number = 0;
+  private isClientConnectedToHost: boolean = false;
+  private cloudStatus: 'ok' | 'error' | 'idle' = 'idle';
 
   // 18 Học viên ảo chia đều 6 nhóm (3 học viên / nhóm)
   private readonly botProfiles: { name: string; teamId: TeamId }[] = [
@@ -88,6 +104,8 @@ class GameSyncService {
         if (event.data?.type === 'SYNC_STATE') {
           this.state = event.data.payload;
           this.notifyListeners();
+        } else if (event.data?.type === 'COUNTDOWN_TICK') {
+          this.notifyCountdown(event.data.seconds);
         }
       };
     }
@@ -169,8 +187,253 @@ class GameSyncService {
       });
     }
 
+    // Gửi cập nhật trực tiếp qua WebRTC P2P tới toàn bộ máy người chơi kết nối
+    this.hostConnections.forEach((conn) => {
+      if (conn.open) {
+        try {
+          conn.send({
+            type: 'SYNC_STATE',
+            payload: this.state,
+          });
+        } catch {
+          // Ignored
+        }
+      }
+    });
+
     this.notifyListeners();
     this.pushToCloud();
+  }
+
+  // ==========================================
+  // P2P WEBRTC (PEERJS) REALTIME NETWORKING
+  // ==========================================
+  public initHost(roomId = DEFAULT_HOST_ROOM_ID) {
+    if (this.isHost && this.peer && !this.peer.destroyed) return;
+    this.isHost = true;
+    this.networkMode = 'host';
+
+    try {
+      if (this.peer && !this.peer.destroyed) {
+        this.peer.destroy();
+      }
+
+      this.peer = new Peer(roomId, { debug: 1 });
+
+      this.peer.on('open', (id) => {
+        console.log('[P2P Host] Sẵn sàng lắng nghe kết nối với Room ID:', id);
+        this.notifyListeners();
+      });
+
+      this.peer.on('connection', (conn) => {
+        const peerId = conn.peer;
+        this.hostConnections.set(peerId, conn);
+        this.p2pConnectedCount = this.hostConnections.size;
+
+        conn.on('open', () => {
+          conn.send({ type: 'SYNC_STATE', payload: this.getState() });
+          this.notifyListeners();
+        });
+
+        conn.on('data', (data: any) => {
+          this.handleIncomingClientAction(data, conn);
+        });
+
+        conn.on('close', () => {
+          this.hostConnections.delete(peerId);
+          this.p2pConnectedCount = this.hostConnections.size;
+          this.notifyListeners();
+        });
+
+        conn.on('error', () => {
+          this.hostConnections.delete(peerId);
+          this.p2pConnectedCount = this.hostConnections.size;
+        });
+      });
+
+      this.peer.on('error', (err: any) => {
+        console.warn('[P2P Host] Peer error:', err?.type || err);
+      });
+    } catch (e) {
+      console.warn('[P2P Host] Lỗi khởi tạo host:', e);
+    }
+  }
+
+  public initClient(hostId = DEFAULT_HOST_ROOM_ID) {
+    if (this.isHost) return;
+    this.networkMode = 'client';
+
+    if (this.peer && !this.peer.destroyed && this.clientConnection?.open) return;
+
+    try {
+      if (this.peer && !this.peer.destroyed) {
+        this.peer.destroy();
+      }
+
+      this.peer = new Peer({ debug: 1 });
+
+      this.peer.on('open', () => {
+        this.connectToHost(hostId);
+      });
+
+      this.peer.on('error', (err) => {
+        console.warn('[P2P Client] Peer error:', err);
+      });
+    } catch (e) {
+      console.warn('[P2P Client] Khởi tạo client lỗi:', e);
+    }
+  }
+
+  private connectToHost(hostId: string) {
+    if (!this.peer || this.peer.destroyed) return;
+
+    try {
+      const conn = this.peer.connect(hostId, { reliable: true });
+      this.clientConnection = conn;
+
+      conn.on('open', () => {
+        this.isClientConnectedToHost = true;
+        conn.send({ type: 'REQUEST_SYNC' });
+        this.notifyListeners();
+      });
+
+      conn.on('data', (msg: any) => {
+        if (msg?.type === 'SYNC_STATE' && msg.payload) {
+          this.state = msg.payload;
+          this.notifyListeners();
+        } else if (msg?.type === 'COUNTDOWN_TICK') {
+          this.notifyCountdown(msg.seconds);
+        }
+      });
+
+      conn.on('close', () => {
+        this.isClientConnectedToHost = false;
+        this.notifyListeners();
+        if (this.clientReconnectTimer) clearTimeout(this.clientReconnectTimer);
+        this.clientReconnectTimer = setTimeout(() => this.connectToHost(hostId), 3000);
+      });
+
+      conn.on('error', () => {
+        this.isClientConnectedToHost = false;
+        this.notifyListeners();
+      });
+    } catch {
+      // Ignored
+    }
+  }
+
+  private handleIncomingClientAction(data: any, conn: DataConnection) {
+    if (!data || !data.type) return;
+
+    switch (data.type) {
+      case 'REQUEST_SYNC':
+        conn.send({ type: 'SYNC_STATE', payload: this.getState() });
+        break;
+
+      case 'REGISTER_PLAYER':
+        if (data.payload) {
+          this.registerPlayer(data.payload);
+        }
+        break;
+
+      case 'ANSWER_QUESTION':
+        if (data.payload) {
+          const { playerId, questionId, selectedAnswer, isCorrect } = data.payload;
+          this.answerQuestion(playerId, questionId, selectedAnswer, isCorrect);
+        }
+        break;
+
+      case 'USE_ITEM':
+        if (data.payload) {
+          const { playerId, itemId, currentQuestion } = data.payload;
+          this.useItem(playerId, itemId, currentQuestion);
+        }
+        break;
+
+      case 'CLAIM_DRAFT':
+        if (data.payload) {
+          const { draftId, playerId } = data.payload;
+          this.claimDraftItem(draftId, playerId);
+        }
+        break;
+    }
+  }
+
+  // ==========================================
+  // ĐẾM NGƯỢC XUẤT KÍCH (COUNTDOWN 3, 2, 1)
+  // ==========================================
+  public subscribeCountdown(listener: CountdownListener): () => void {
+    this.countdownListeners.add(listener);
+    return () => this.countdownListeners.delete(listener);
+  }
+
+  private notifyCountdown(seconds: number) {
+    this.state.roomState.countdownRemaining = seconds > 0 ? seconds : null;
+    soundService.playCountdownTick(seconds === 0);
+    this.countdownListeners.forEach((l) => {
+      try {
+        l(seconds);
+      } catch {
+        // Ignored
+      }
+    });
+  }
+
+  public startBattleWithCountdown(countdownSeconds: number = 3, onComplete?: () => void) {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+
+    let sec = countdownSeconds;
+    this.state.roomState.countdownRemaining = sec;
+    this.broadcastCountdown(sec);
+
+    this.countdownTimer = setInterval(() => {
+      sec -= 1;
+      this.state.roomState.countdownRemaining = sec > 0 ? sec : null;
+
+      if (sec > 0) {
+        this.broadcastCountdown(sec);
+      } else {
+        clearInterval(this.countdownTimer);
+        this.countdownTimer = null;
+        this.state.roomState.countdownRemaining = null;
+        this.broadcastCountdown(0);
+        soundService.playBattleStart();
+        this.setPhase('BATTLE');
+        if (onComplete) onComplete();
+      }
+    }, 1000);
+  }
+
+  private broadcastCountdown(sec: number) {
+    this.notifyCountdown(sec);
+
+    if (this.channel) {
+      this.channel.postMessage({ type: 'COUNTDOWN_TICK', seconds: sec });
+    }
+
+    this.hostConnections.forEach((conn) => {
+      if (conn.open) {
+        try {
+          conn.send({ type: 'COUNTDOWN_TICK', seconds: sec });
+        } catch {
+          // Ignored
+        }
+      }
+    });
+  }
+
+  public getNetworkStatus() {
+    return {
+      mode: this.networkMode,
+      isHost: this.isHost,
+      connectedPeers: this.hostConnections.size,
+      isConnectedToHost: this.isClientConnectedToHost,
+      cloudStatus: this.cloudStatus,
+      cloudDbUrl: this.cloudDbUrl,
+    };
   }
 
   private notifyListeners() {
@@ -575,6 +838,14 @@ class GameSyncService {
 
     soundService.playBoost();
     this.saveAndBroadcast();
+
+    if (this.networkMode === 'client' && this.clientConnection?.open) {
+      this.clientConnection.send({
+        type: 'CLAIM_DRAFT',
+        payload: { draftId, playerId },
+      });
+    }
+
     return { success: true, message: `Bạn đã nhận [${draftItem.item.name}]!` };
   }
 
@@ -657,6 +928,14 @@ class GameSyncService {
     }
 
     this.saveAndBroadcast();
+
+    if (this.networkMode === 'client' && this.clientConnection?.open) {
+      this.clientConnection.send({
+        type: 'ANSWER_QUESTION',
+        payload: { playerId, questionId, selectedAnswer, isCorrect },
+      });
+    }
+
     return { pointsEarned: points, streak: player.currentStreak, rolledItem };
   }
 
@@ -846,6 +1125,14 @@ class GameSyncService {
     }
 
     this.saveAndBroadcast();
+
+    if (this.networkMode === 'client' && this.clientConnection?.open) {
+      this.clientConnection.send({
+        type: 'USE_ITEM',
+        payload: { playerId, itemId, currentQuestion },
+      });
+    }
+
     return true;
   }
 
@@ -879,10 +1166,19 @@ class GameSyncService {
       this.state.players[existingIndex] = newPlayer;
     } else {
       this.state.players.push(newPlayer);
+      soundService.playPlayerJoin();
     }
 
     this.updateTeamMemberCounts();
     this.saveAndBroadcast();
+
+    if (this.networkMode === 'client' && this.clientConnection?.open) {
+      this.clientConnection.send({
+        type: 'REGISTER_PLAYER',
+        payload: playerData,
+      });
+    }
+
     return newPlayer;
   }
 

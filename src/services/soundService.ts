@@ -286,6 +286,105 @@ class SoundService {
   }
 
   /**
+   * Âm thanh khi có người chơi mới tham gia sảnh chờ (Lobby Join Chime)
+   */
+  public playPlayerJoin() {
+    if (this.isMuted) return;
+    try {
+      this.initContext();
+      if (!this.ctx || !this.masterGain) return;
+
+      const now = this.ctx.currentTime;
+      const notes = [587.33, 880]; // D5 -> A5
+
+      notes.forEach((freq, idx) => {
+        if (!this.ctx || !this.masterGain) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+        gain.gain.setValueAtTime(0, now + idx * 0.08);
+        gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.08 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.22);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.25);
+      });
+    } catch {
+      // Ignored
+    }
+  }
+
+  /**
+   * Tiếng tút đếm ngược 3, 2, 1 và Xuất kích (Countdown Beep)
+   */
+  public playCountdownTick(isFinal: boolean = false) {
+    if (this.isMuted) return;
+    try {
+      this.initContext();
+      if (!this.ctx || !this.masterGain) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = isFinal ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(isFinal ? 1046.5 : 523.25, now); // C6 if final, C5 if tick
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + (isFinal ? 0.6 : 0.2));
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + (isFinal ? 0.65 : 0.22));
+    } catch {
+      // Ignored
+    }
+  }
+
+  /**
+   * Kèn hiệu lệnh xuất kích (Battle Start Horn)
+   */
+  public playBattleStart() {
+    if (this.isMuted) return;
+    try {
+      this.initContext();
+      if (!this.ctx || !this.masterGain) return;
+
+      const now = this.ctx.currentTime;
+      const notes = [392.00, 523.25, 659.25, 783.99]; // G4, C5, E5, G5
+
+      notes.forEach((freq, idx) => {
+        if (!this.ctx || !this.masterGain) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+
+        gain.gain.setValueAtTime(0.01, now + idx * 0.09);
+        gain.gain.linearRampToValueAtTime(0.3, now + idx * 0.09 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.45);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now + idx * 0.09);
+        osc.stop(now + idx * 0.09 + 0.48);
+      });
+    } catch {
+      // Ignored
+    }
+  }
+
+  /**
    * Hợp âm toàn thắng 30/4/1975
    */
   public playVictory() {

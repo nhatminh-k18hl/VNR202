@@ -139,6 +139,7 @@ export interface RoomState {
   timeRemainingSeconds: number; // Thời gian trận đấu còn lại
   lastManualAirdropAt?: number; // Thời điểm Admin bấm thả thính gần nhất (delay 10s)
   lastEnemyAttackAt?: number;   // Thời điểm đợt phản kích gần nhất (delay tối thiểu 20s)
+  countdownRemaining?: number | null; // Đếm ngược 3, 2, 1 xuất kích toàn quân
 }
 
 export interface LiveBattleEvent {

@@ -21,7 +21,13 @@ import {
   Layers,
   X,
   Target,
-  Users
+  Users,
+  Copy,
+  Check,
+  Eye,
+  Zap,
+  Wifi,
+  Smartphone
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { QRCodeSVG } from 'qrcode.react';
@@ -116,6 +122,20 @@ export const AdminPage: React.FC = () => {
 
   // Thống kê cuối trận
   const [summaryStats, setSummaryStats] = useState<GameSummaryStats | null>(null);
+  const [lobbyViewMode, setLobbyViewMode] = useState<'lobby' | 'saban'>('lobby');
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      gameSyncService.initHost();
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (gameState.roomState.phase === 'BATTLE') {
+      setLobbyViewMode('saban');
+    }
+  }, [gameState.roomState.phase]);
 
   useEffect(() => {
     const unsubscribe = gameSyncService.subscribe((newState) => {
@@ -199,10 +219,23 @@ export const AdminPage: React.FC = () => {
     }
   };
 
+  const handleCopyLink = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(playUrl).then(() => {
+        setCopiedLink(true);
+        setNotice('Đã sao chép link phòng chơi vào bộ nhớ tạm!');
+        setTimeout(() => setCopiedLink(false), 2500);
+        setTimeout(() => setNotice(null), 3000);
+      });
+    }
+  };
+
   const handleStartBattle = () => {
-    gameSyncService.setPhase('BATTLE');
-    setNotice('Đã phát lệnh BẮT ĐẦU! Thời gian 5 phút bắt đầu đếm ngược.');
-    setTimeout(() => setNotice(null), 3000);
+    gameSyncService.startBattleWithCountdown(3, () => {
+      setLobbyViewMode('saban');
+      setNotice('🚀 HIỆU LỆNH TỔNG TIẾN CÔNG! Toàn quân xuất kích!');
+      setTimeout(() => setNotice(null), 3000);
+    });
   };
 
   const handlePauseBattle = () => {
@@ -214,9 +247,10 @@ export const AdminPage: React.FC = () => {
   const handleResetBattle = () => {
     if (window.confirm('Bạn có chắc chắn muốn cài đặt lại toàn bộ phòng chơi và kết quả?')) {
       gameSyncService.resetGame();
+      setLobbyViewMode('lobby');
       setShowStatsModal(false);
       hasUserDismissedStatsModalRef.current = false;
-      setNotice('Đã cài đặt lại ván mới.');
+      setNotice('Đã cài đặt lại ván mới, mở sảnh chờ cho các cánh quân.');
       setTimeout(() => setNotice(null), 3000);
     }
   };
@@ -366,6 +400,26 @@ export const AdminPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      {/* OVERLAY ĐẾM NGƯỢC XUẤT KÍCH (3... 2... 1... XUẤT KÍCH) */}
+      {gameState.roomState.countdownRemaining !== null && gameState.roomState.countdownRemaining !== undefined && gameState.roomState.countdownRemaining > 0 && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-200">
+          <div className="text-center space-y-4 max-w-lg">
+            <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-amber-400 block animate-pulse">
+              ⭐ BỘ TỔNG TƯ LỆNH PHÁT LỆNH TIẾN CÔNG ⭐
+            </span>
+            <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded-full bg-red-600 border-4 border-amber-300 flex items-center justify-center text-white font-black text-6xl sm:text-7xl shadow-2xl shadow-red-600/60 animate-ping duration-1000">
+              {gameState.roomState.countdownRemaining}
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black uppercase text-white tracking-wider">
+              TẤT CẢ CÁNH QUÂN CHUẨN BỊ XUẤT KÍCH!
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-300">
+              Toàn bộ chiến sĩ trong sảnh chờ đang được chuyển vào sa bàn thi đấu...
+            </p>
+          </div>
+        </div>
+      )}
+
       {notice && (
         <div className="fixed top-20 right-4 z-50 px-4 py-2.5 rounded-2xl bg-stone-900 text-white text-xs font-bold shadow-2xl border border-stone-700">
           {notice}
@@ -408,30 +462,40 @@ export const AdminPage: React.FC = () => {
             </span>
           </div>
 
+          {gameState.roomState.phase === 'WAITING' && (
+            <button
+              onClick={() => setLobbyViewMode((prev) => (prev === 'lobby' ? 'saban' : 'lobby'))}
+              className="px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-sm bg-stone-100 dark:bg-[#151e18] border-stone-200 dark:border-[#223025] text-stone-700 dark:text-stone-300 hover:border-amber-400 cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5 text-amber-500" />
+              <span>{lobbyViewMode === 'lobby' ? 'Xem Trước Sa Bàn' : 'Về Sảnh Chờ QR'}</span>
+            </button>
+          )}
+
           <button
             onClick={() => setShowQrModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-[#151e18] border border-stone-200 dark:border-[#223025] text-xs font-bold text-stone-700 dark:text-stone-300 hover:border-amber-400 flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-[#151e18] border border-stone-200 dark:border-[#223025] text-xs font-bold text-stone-700 dark:text-stone-300 hover:border-amber-400 flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <QrCode className="w-3.5 h-3.5" /> Mã QR Chiếu Lớp
           </button>
 
           <button
             onClick={() => setShowPowerUpsModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-[#151e18] border border-stone-200 dark:border-[#223025] text-xs font-bold text-stone-700 dark:text-stone-300 hover:border-amber-400 flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-[#151e18] border border-stone-200 dark:border-[#223025] text-xs font-bold text-stone-700 dark:text-stone-300 hover:border-amber-400 flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <Layers className="w-3.5 h-3.5 text-amber-500" /> Quản Lý Vật Phẩm & Easter Eggs
           </button>
 
           <button
             onClick={() => setShowQuestionModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-[#151e18] border border-stone-200 dark:border-[#223025] text-xs font-bold text-stone-700 dark:text-stone-300 hover:border-amber-400 flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-[#151e18] border border-stone-200 dark:border-[#223025] text-xs font-bold text-stone-700 dark:text-stone-300 hover:border-amber-400 flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5" /> Bộ Câu Hỏi
           </button>
 
           <button
             onClick={() => gameSyncService.toggleBots()}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all ${
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer ${
               gameState.roomState.isBotActive
                 ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-500'
                 : 'bg-stone-100 dark:bg-[#151e18] border-stone-200 dark:border-[#223025] text-stone-700 dark:text-stone-300'
@@ -442,14 +506,14 @@ export const AdminPage: React.FC = () => {
 
           <button
             onClick={handleOpenStatsModalManually}
-            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-900 text-xs font-black flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-900 text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <Trophy className="w-3.5 h-3.5" /> Bảng Vinh Danh
           </button>
 
           <button
             onClick={handleLogout}
-            className="p-1.5 rounded-xl border border-stone-200 dark:border-[#223025] bg-stone-100 dark:bg-[#151e18] text-stone-600 dark:text-stone-400 hover:text-red-500"
+            className="p-1.5 rounded-xl border border-stone-200 dark:border-[#223025] bg-stone-100 dark:bg-[#151e18] text-stone-600 dark:text-stone-400 hover:text-red-500 cursor-pointer"
             title="Đăng xuất"
           >
             <LogOut className="w-4 h-4" />
@@ -457,7 +521,199 @@ export const AdminPage: React.FC = () => {
         </div>
       </div>
 
-      {/* THANH ĐIỀU HÀNH TRẬN ĐẤU */}
+      {/* ===================================================
+          MÀN HÌNH SẢNH CHỜ QUẢN TRÒ (HOST LOBBY - BLOOKET/WAYGROUND STYLE)
+          Hiển thị khi phase === 'WAITING' và lobbyViewMode === 'lobby'
+          =================================================== */}
+      {gameState.roomState.phase === 'WAITING' && lobbyViewMode === 'lobby' ? (
+        <section className="space-y-6 animate-in fade-in duration-200">
+          {/* BANNER HIỆU LỆNH SẢNH CHỜ */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-red-900/90 via-[#1c120c] to-amber-950/80 border-2 border-amber-500/50 shadow-2xl text-white relative overflow-hidden">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-600/80 border border-amber-400 text-amber-300 text-xs font-black uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" />
+                  <span>SẢNH CHỜ QUẢN TRÒ • TỔNG TIẾN CÔNG 1975</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white drop-shadow">
+                  CHIẾN HÀO ĐANG TẬP HỢP QUÂN SỐ
+                </h2>
+                <p className="text-xs sm:text-sm text-stone-300 max-w-xl">
+                  Yêu cầu tất cả chiến sĩ quét mã QR hoặc truy cập đường link để vào phòng chờ. Khi Quản trò bấm <strong>"Phát Lệnh Bắt Đầu"</strong>, toàn bộ người chơi trong phòng sẽ tự động xung trận ngay lập tức!
+                </p>
+              </div>
+
+              {/* NÚT BẮT ĐẦU TRẬN ĐẤU TO & NỔI BẬT */}
+              <div className="flex flex-col items-center gap-2 w-full md:w-auto">
+                <button
+                  onClick={handleStartBattle}
+                  className="w-full md:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-black text-sm sm:text-base uppercase tracking-wider shadow-xl shadow-red-600/50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer border border-amber-300"
+                >
+                  <Play className="w-5 h-5 fill-white" />
+                  <span>PHÁT LỆNH BẮT ĐẦU (XUẤT KÍCH)</span>
+                </button>
+                <span className="text-[11px] text-amber-200/90 font-mono">
+                  {gameState.players.length} chiến sĩ đã sẵn sàng
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* GRID 2 CỘT: CỘT TRÁI (QR CHIẾU LỚP & LINK) - CỘT PHẢI (DANH SÁCH 6 CÁNH QUÂN) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* CỘT TRÁI: MÃ QR CHIẾU LỚP */}
+            <div className="lg:col-span-5 p-6 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-md flex flex-col items-center text-center space-y-4">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                  Mã QR Chiếu Máy Chiếu Cho Cả Lớp Quét
+                </span>
+                <h3 className="text-lg font-black uppercase text-stone-900 dark:text-white flex items-center justify-center gap-1.5">
+                  <Smartphone className="w-4 h-4 text-red-600 dark:text-amber-400" />
+                  Quét Bằng Camera Điện Thoại
+                </h3>
+              </div>
+
+              {/* KHUNG MÃ QR */}
+              <div className="p-4 bg-white rounded-3xl inline-block shadow-inner border-2 border-stone-200 dark:border-stone-700">
+                <QRCodeSVG value={playUrl} size={220} level="M" />
+              </div>
+
+              {/* MÃ PHÒNG & COPY LINK */}
+              <div className="w-full space-y-2">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-stone-100 dark:bg-[#0c120e] border border-stone-200 dark:border-[#1e2a21] text-xs font-mono">
+                  <span className="truncate max-w-[220px] text-stone-600 dark:text-stone-300">{playUrl}</span>
+                  <button
+                    onClick={handleCopyLink}
+                    className="ml-2 px-2.5 py-1 rounded-lg bg-stone-900 dark:bg-stone-700 hover:bg-stone-800 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedLink ? 'Đã chép' : 'Sao chép'}</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-xs px-2 text-stone-500">
+                  <span>Mã phòng thi đua: <strong className="font-mono text-red-600 dark:text-amber-400">#VNR1975</strong></span>
+                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    P2P Host Sẵn Sàng
+                  </span>
+                </div>
+              </div>
+
+              {/* NÚT THAO TÁC BỔ TRỢ */}
+              <div className="w-full pt-2 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => gameSyncService.toggleBots()}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    gameState.roomState.isBotActive
+                      ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-500'
+                      : 'bg-stone-100 dark:bg-[#0e1610] border-stone-200 dark:border-[#202e23] text-stone-700 dark:text-stone-300 hover:border-amber-400'
+                  }`}
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>{gameState.roomState.isBotActive ? 'Tắt 18 Bot' : 'Bật 18 Bot Demo'}</span>
+                </button>
+
+                <button
+                  onClick={() => setLobbyViewMode('saban')}
+                  className="py-2 px-3 rounded-xl border border-stone-200 dark:border-[#202e23] bg-stone-100 dark:bg-[#0e1610] text-stone-700 dark:text-stone-300 hover:border-amber-400 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Xem Trước Sa Bàn</span>
+                </button>
+              </div>
+            </div>
+
+            {/* CỘT PHẢI: ROSTER 6 CÁNH QUÂN VỚI THÀNH VIÊN ĐÃ GIA NHẬP */}
+            <div className="lg:col-span-7 p-6 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-md space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-[#1e2a21]">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-red-600 dark:text-amber-400" />
+                  <h3 className="text-base font-black uppercase text-stone-900 dark:text-white">
+                    Quân Số Các Cánh Quân ({gameState.players.length} Chiến Sĩ)
+                  </h3>
+                </div>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                  ● Tự động cập nhật thời gian thực
+                </span>
+              </div>
+
+              {/* 6 CARD NHÓM */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-1">
+                {gameState.teams.map((team) => {
+                  const members = gameState.players.filter((p) => p.teamId === team.id);
+                  return (
+                    <div
+                      key={team.id}
+                      className="p-3.5 rounded-2xl border border-stone-200 dark:border-[#202e23] bg-stone-50/80 dark:bg-[#0e1610] space-y-2 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span 
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: team.color }}
+                            />
+                            <strong className="text-xs font-black text-stone-900 dark:text-white">{team.name}</strong>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
+                            Xe #{team.tankNumber}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1 mt-0.5">
+                          {team.corpsName}
+                        </p>
+                      </div>
+
+                      {/* Danh sách thành viên */}
+                      <div className="pt-1.5 border-t border-stone-200/60 dark:border-[#1c291f] space-y-1">
+                        <div className="flex items-center justify-between text-[10px] text-stone-400 font-bold">
+                          <span>Quân số:</span>
+                          <span className="text-stone-700 dark:text-stone-200 font-bold">{members.length} chiến sĩ</span>
+                        </div>
+                        {members.length === 0 ? (
+                          <p className="text-[11px] text-stone-400 italic py-1">Đang chờ chiến sĩ gia nhập...</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                            {members.map((m) => (
+                              <span
+                                key={m.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white dark:bg-[#162219] border border-stone-200 dark:border-[#223326] text-[11px] text-stone-800 dark:text-stone-200 font-semibold shadow-xs"
+                              >
+                                <span>{m.name}</span>
+                                {m.studentCode && (
+                                  <span className="font-mono text-[9px] text-stone-400">({m.studentCode})</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* NÚT QUAY LẠI SẢNH CHỜ NẾU ĐANG Ở WAITING VÀ XEM TRƯỚC */}
+          {gameState.roomState.phase === 'WAITING' && (
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 flex items-center justify-between text-xs">
+              <span className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-amber-600" /> Bạn đang ở chế độ xem trước Sa bàn tác chiến.
+              </span>
+              <button
+                onClick={() => setLobbyViewMode('lobby')}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer shadow-sm flex items-center gap-1"
+              >
+                <span>← Quay lại Sảnh Chờ QR</span>
+              </button>
+            </div>
+          )}
+
+          {/* THANH ĐIỀU HÀNH TRẬN ĐẤU */}
       <div className="p-4 rounded-2xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {gameState.roomState.phase !== 'BATTLE' ? (
@@ -830,7 +1086,7 @@ export const AdminPage: React.FC = () => {
               />
               <button
                 onClick={handleSaveFirebaseUrl}
-                className="px-4 py-2 rounded-xl bg-stone-900 dark:bg-stone-700 hover:bg-stone-800 text-white font-bold text-xs"
+                className="px-4 py-2 rounded-xl bg-stone-900 dark:bg-stone-700 hover:bg-stone-800 text-white font-bold text-xs cursor-pointer"
               >
                 Lưu URL
               </button>
@@ -838,6 +1094,8 @@ export const AdminPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
+  )}
 
       {/* ===================================================
           MODAL 1: MÃ QR

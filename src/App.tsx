@@ -3,7 +3,8 @@ import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { PlayPage } from './pages/PlayPage';
 import { AdminPage } from './pages/AdminPage';
-import { Swords, ShieldAlert, Compass, Sun, Moon } from 'lucide-react';
+import { Swords, ShieldAlert, Compass, Sun, Moon, Radio } from 'lucide-react';
+import { gameSyncService } from './services/gameSyncService';
 
 interface ThemeProps {
   isDark: boolean;
@@ -12,6 +13,18 @@ interface ThemeProps {
 
 const NavigationHeader: React.FC<ThemeProps> = ({ isDark, toggleTheme }) => {
   const location = useLocation();
+  const [isBattleActive, setIsBattleActive] = useState<boolean>(() => {
+    return gameSyncService.getState().roomState.phase === 'BATTLE';
+  });
+
+  useEffect(() => {
+    const unsubscribe = gameSyncService.subscribe((state) => {
+      setIsBattleActive(state.roomState.phase === 'BATTLE');
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const isPlayingBattle = location.pathname === '/play' && isBattleActive;
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0c120e]/95 backdrop-blur-md border-b border-stone-200 dark:border-[#1e2a21] shadow-sm transition-colors duration-200">
@@ -40,43 +53,53 @@ const NavigationHeader: React.FC<ThemeProps> = ({ isDark, toggleTheme }) => {
 
         {/* Menu Điều Hướng & Nút Chuyển Light/Dark Mode */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <nav className="flex items-center gap-1 sm:gap-2">
-            <Link
-              to="/"
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                location.pathname === '/'
-                  ? 'bg-red-50 dark:bg-stone-800 text-red-700 dark:text-amber-300 border border-red-200 dark:border-stone-700 shadow-sm'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60'
-              }`}
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Tổng Quan</span>
-            </Link>
+          {isPlayingBattle ? (
+            /* Khi người chơi đang trong trận đánh, hiển thị huy hiệu tập trung tác chiến chống bấm nhầm */
+            <div className="flex items-center gap-2">
+              <div className="px-3 py-1.5 rounded-xl bg-red-600/15 border border-red-500/40 text-red-600 dark:text-red-400 text-xs font-black flex items-center gap-1.5 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
+                <span>CHIẾN HÀO SỐ 1975</span>
+              </div>
+            </div>
+          ) : (
+            <nav className="flex items-center gap-1 sm:gap-2">
+              <Link
+                to="/"
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  location.pathname === '/'
+                    ? 'bg-red-50 dark:bg-stone-800 text-red-700 dark:text-amber-300 border border-red-200 dark:border-stone-700 shadow-sm'
+                    : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60'
+                }`}
+              >
+                <Compass className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tổng Quan</span>
+              </Link>
 
-            <Link
-              to="/play"
-              className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                location.pathname === '/play'
-                  ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60'
-              }`}
-            >
-              <Swords className="w-3.5 h-3.5" />
-              <span>Vào Chiến Hào</span>
-            </Link>
+              <Link
+                to="/play"
+                className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  location.pathname === '/play'
+                    ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                    : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60'
+                }`}
+              >
+                <Swords className="w-3.5 h-3.5" />
+                <span>Vào Chiến Hào</span>
+              </Link>
 
-            <Link
-              to="/admin"
-              className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                location.pathname === '/admin'
-                  ? 'bg-stone-900 text-white dark:bg-red-700 dark:text-white shadow-md'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60'
-              }`}
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
-              <span>Chỉ Huy Sở</span>
-            </Link>
-          </nav>
+              <Link
+                to="/admin"
+                className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  location.pathname === '/admin'
+                    ? 'bg-stone-900 text-white dark:bg-red-700 dark:text-white shadow-md'
+                    : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60'
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
+                <span className="hidden sm:inline">Chỉ Huy Sở</span>
+              </Link>
+            </nav>
+          )}
 
           {/* Nút Toggle Light / Dark Mode */}
           <button
