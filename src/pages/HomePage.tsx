@@ -1,326 +1,259 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Swords, 
   ShieldAlert, 
-  FileText, 
-  CheckCircle2, 
-  AlertCircle, 
-  RefreshCw, 
   Flag, 
   Users, 
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Compass,
+  Trophy,
+  Flame,
+  Zap,
+  Target
 } from 'lucide-react';
-import { Question } from '../types/game';
-import { fetchAndParseQuestions } from '../utils/markdownParser';
 import { HISTORICAL_MILESTONES, INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
 
 export const HomePage: React.FC = () => {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [expandedQuestionId, setExpandedQuestionId] = useState<string | number | null>(1);
-
-  const loadQuestions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      // Sử dụng đường dẫn tương đối ./questions.md để tương thích hoàn toàn với GitHub Pages
-      const loaded = await fetchAndParseQuestions('./questions.md');
-      setQuestions(loaded);
-    } catch (err: any) {
-      setError(err?.message || 'Không thể đọc file questions.md');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadQuestions();
-  }, []);
-
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-12">
-      {/* Hero Banner mang hào khí lịch sử 1975 */}
-      <section className="text-center space-y-4 pt-4 pb-6 relative">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-vietnam-red/20 border border-vietnam-red/40 text-vietnam-yellow text-sm font-semibold tracking-wide">
-          <Sparkles className="w-4 h-4 text-vietnam-gold animate-pulse" />
-          <span>VNR202 - Lịch Sử Đảng Cộng Sản Việt Nam • Chủ Đề 6</span>
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-14">
+      {/* ===================================================
+          HERO BANNER - HÀO KHÍ MÙA XUÂN 1975
+          =================================================== */}
+      <section className="text-center space-y-6 pt-4 pb-2 relative">
+        {/* Dấu Mật Lịch Sử */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-950/80 border border-red-700/80 text-amber-300 text-xs font-black uppercase tracking-widest shadow-lg shadow-red-950/60">
+          <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+          <span>VNR202 • Lịch Sử Đảng Cộng Sản Việt Nam • Chủ Đề 6</span>
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white uppercase drop-shadow-md">
-          <span className="text-vietnam-yellow">Thần Tốc</span>{' '}
-          <span className="text-vietnam-red">1975</span>
-        </h1>
+        {/* Tiêu đề chính hào hùng */}
+        <div className="space-y-2">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white uppercase drop-shadow-2xl">
+            <span className="text-amber-300">THẦN TỐC</span>{' '}
+            <span className="text-red-500">1975</span>
+          </h1>
+          <p className="text-sm sm:text-base font-bold text-amber-200/90 uppercase tracking-widest">
+            Đại Thắng Mùa Xuân • Giải Phóng Hoàn Toàn Miền Nam
+          </p>
+        </div>
 
-        <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto font-medium">
-          Hệ thống Web Game Trắc nghiệm Tương tác Thời gian thực mô phỏng 5 Cánh quân thần tốc
-          tiến về giải phóng Sài Gòn, cắm cờ toàn thắng tại Dinh Độc Lập trưa ngày 30/4/1975.
-        </p>
+        {/* Bức Điện Mật Lịch Sử Của Đại Tướng Võ Nguyên Giáp (7/4/1975) */}
+        <div className="max-w-3xl mx-auto p-5 sm:p-6 rounded-2xl bg-[#141f16]/90 border border-[#2b422e] shadow-2xl relative overflow-hidden text-left">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="flex items-center gap-2 text-red-400 font-mono text-[11px] font-black uppercase tracking-wider mb-2">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+            <span>[ ĐIỆN KHẨN MẬT • BỘ QUỐC PHÒNG • 7/4/1975 ]</span>
+          </div>
 
-        <div className="flex flex-wrap justify-center gap-4 pt-2 text-xs md:text-sm text-slate-400">
-          <span className="flex items-center gap-1.5 bg-slate-900/60 px-3 py-1 rounded-md border border-slate-800">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span> React 18 + Vite + TS
-          </span>
-          <span className="flex items-center gap-1.5 bg-slate-900/60 px-3 py-1 rounded-md border border-slate-800">
-            <span className="w-2 h-2 rounded-full bg-blue-400"></span> Tailwind CSS
-          </span>
-          <span className="flex items-center gap-1.5 bg-slate-900/60 px-3 py-1 rounded-md border border-slate-800">
-            <span className="w-2 h-2 rounded-full bg-vietnam-gold"></span> GitHub Pages Ready (`base: './'`)
-          </span>
-          <span className="flex items-center gap-1.5 bg-slate-900/60 px-3 py-1 rounded-md border border-slate-800">
-            <span className="w-2 h-2 rounded-full bg-purple-400"></span> Firebase Realtime Hub
-          </span>
+          <blockquote className="text-sm sm:text-base text-amber-100 font-serif italic leading-relaxed border-l-4 border-amber-400 pl-4 py-1">
+            "Thần tốc, thần tốc hơn nữa; Táo bạo, táo bạo hơn nữa; Tranh thủ từng phút, từng giờ; Xốc tới mặt trận; Giải phóng miền Nam; Quyết chiến và toàn thắng!"
+          </blockquote>
+
+          <div className="text-right text-xs text-slate-400 font-bold mt-2">
+            — Đại tướng Võ Nguyên Giáp (Văn)
+          </div>
         </div>
       </section>
 
-      {/* LỰA CHỌN VAI TRÒ - 2 CỔNG ĐIỀU HƯỚNG CHÍNH */}
+      {/* ===================================================
+          HAI CỬA KHẨU XUẤT KÍCH CHÍNH (ROLE SELECTION)
+          =================================================== */}
       <section className="grid md:grid-cols-2 gap-6">
-        {/* Cổng 1: Chiến trường Người chơi */}
+        {/* Cửa Khẩu 1: Dành cho Sinh viên các nhóm */}
         <Link 
           to="/play"
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-military-card to-slate-900 p-8 border border-military-border hover:border-vietnam-yellow/60 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#18261b] via-[#121c14] to-[#0c140d] p-7 sm:p-8 border-2 border-[#2b422e] hover:border-amber-400/80 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-1.5 flex flex-col justify-between"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-vietnam-gold/5 rounded-full blur-2xl group-hover:bg-vietnam-gold/15 transition-all"></div>
-          
-          <div className="flex items-start justify-between">
-            <div className="w-14 h-14 rounded-xl bg-vietnam-yellow/10 border border-vietnam-yellow/30 flex items-center justify-center text-vietnam-yellow group-hover:scale-110 transition-transform">
-              <Swords className="w-7 h-7" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400/10 rounded-full blur-3xl group-hover:bg-amber-400/20 transition-all" />
+
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/40 flex items-center justify-center text-amber-300 group-hover:scale-110 transition-transform shadow-lg shadow-amber-950/40">
+                <Swords className="w-7 h-7" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30">
+                Dành Cho Các Nhóm Đua
+              </span>
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              Dành cho Sinh viên
+
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-amber-300 transition-colors flex items-center gap-2">
+                Vào Chiến Hào Tác Chiến
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Nhập vai chiến sĩ giải phóng quân thuộc 6 Cánh quân (Nhóm 1, 2, 3, 4, 5 và 7). 
+                Cùng đồng đội trả lời trắc nghiệm, tích lũy Streak, tung Lệnh bài chiến thuật để đẩy xe tăng T-54 húc đổ cổng Dinh Độc Lập!
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-[#233526] flex items-center justify-between text-xs text-slate-400">
+            <span className="font-semibold text-slate-300">6 Cánh quân thi đua</span>
+            <span className="text-amber-400 font-black group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              Bắt đầu xung phong →
             </span>
-          </div>
-
-          <div className="mt-6 space-y-2">
-            <h2 className="text-2xl font-bold text-white group-hover:text-vietnam-yellow transition-colors flex items-center gap-2">
-              Vào Chiến Trường
-              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </h2>
-            <p className="text-sm text-slate-300">
-              Nhập vai chiến sĩ giải phóng quân thuộc 6 Cánh quân (Nhóm 1, 2, 3, 4, 5 và 7). Trả lời trắc nghiệm, duy trì chuỗi Streak, nhận vật phẩm và đẩy nhanh tiến độ cắm cờ Dinh Độc Lập!
-            </p>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-            <span>6 Cánh quân thi đua</span>
-            <span className="text-vietnam-yellow font-medium">Bấm để tham chiến →</span>
           </div>
         </Link>
 
-        {/* Cổng 2: Chỉ Huy Sở Admin */}
+        {/* Cửa Khẩu 2: Dành cho Ban Quản trò Nhóm 6 */}
         <Link 
           to="/admin"
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-military-surface p-8 border border-military-border hover:border-vietnam-red/70 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:-translate-y-1"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2a1315] via-[#1a0e10] to-[#0c140d] p-7 sm:p-8 border-2 border-[#4a1f23] hover:border-red-500/80 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/20 hover:-translate-y-1.5 flex flex-col justify-between"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-vietnam-red/10 rounded-full blur-2xl group-hover:bg-vietnam-red/20 transition-all"></div>
-          
-          <div className="flex items-start justify-between">
-            <div className="w-14 h-14 rounded-xl bg-vietnam-red/20 border border-vietnam-red/40 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
-              <ShieldAlert className="w-7 h-7" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-red-600/10 rounded-full blur-3xl group-hover:bg-red-600/25 transition-all" />
+
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="w-14 h-14 rounded-2xl bg-red-600/15 border border-red-500/40 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform shadow-lg shadow-red-950/40">
+                <ShieldAlert className="w-7 h-7" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30">
+                Ban Quản Trò Nhóm 6
+              </span>
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
-              Dành cho Admin Nhóm 6
+
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-red-400 transition-colors flex items-center gap-2">
+                Chỉ Huy Sở Mặt Trận
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Bộ Chỉ huy Chiến dịch Hồ Chí Minh (Căn cứ Tà Thiết - Lộc Ninh): Quản trị sa bàn 6 làn xe tăng thời gian thực, điều phối nhịp độ câu hỏi, chiếu mã QR điểm danh cả lớp và xuất báo cáo điểm cuối trận.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-[#3b1c20] flex items-center justify-between text-xs text-slate-400">
+            <span className="font-semibold text-slate-300">Tài khoản BTC: admin_nhom6</span>
+            <span className="text-red-400 font-black group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              Mở bản đồ tác chiến →
             </span>
-          </div>
-
-          <div className="mt-6 space-y-2">
-            <h2 className="text-2xl font-bold text-white group-hover:text-red-400 transition-colors flex items-center gap-2">
-              Chỉ Huy Sở Mặt Trận
-              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </h2>
-            <p className="text-sm text-slate-300">
-              Bộ Chỉ huy Chiến dịch Hồ Chí Minh: Điều phối nhịp độ câu hỏi, quản lý bảng xếp hạng thời gian thực, kích hoạt hiệu ứng vật phẩm và tính toán bảng vinh danh MVP/SVP cuối trận.
-            </p>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-            <span>Xác thực: admin_nhom6 / 30041975</span>
-            <span className="text-red-400 font-medium">Đăng nhập Quản trị →</span>
           </div>
         </Link>
       </section>
 
-      {/* TIỆN ÍCH KIỂM TRA BỘ ĐỌC MARKDOWN VÀ DỮ LIỆU CÂU HỎI MẪU */}
-      <section className="bg-military-surface/90 border border-military-border rounded-2xl p-6 md:p-8 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-military-border pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-vietnam-yellow" />
-              <h2 className="text-xl font-bold text-white">Kiểm Tra Bộ Đọc File Markdown (`public/questions.md`)</h2>
-            </div>
-            <p className="text-sm text-slate-400">
-              Tự động thực hiện <code className="text-vietnam-yellow bg-slate-900 px-1.5 py-0.5 rounded">fetch('./questions.md')</code> và phân tích cú pháp trắc nghiệm lịch sử.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {loading ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-semibold">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Đang đọc file...
-              </span>
-            ) : error ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-semibold">
-                <AlertCircle className="w-3.5 h-3.5" /> Lỗi đọc file
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
-                <CheckCircle2 className="w-3.5 h-3.5" /> {questions.length} câu hỏi đã nạp thành công
-              </span>
-            )}
-
-            <button
-              onClick={loadQuestions}
-              disabled={loading}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700"
-              title="Tải lại questions.md"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+      {/* ===================================================
+          QUY TẮC TÁC CHIẾN & THỂ LỆ THI ĐẤU
+          =================================================== */}
+      <section className="bg-[#141f16]/90 border border-[#2b422e] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+        <div className="flex items-center gap-2.5 border-b border-[#233526] pb-3">
+          <Target className="w-5 h-5 text-amber-400" />
+          <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wide">
+            Thể Lệ Tác Chiến & Cách Thức Ghi Điểm
+          </h2>
         </div>
 
-        {error && (
-          <div className="p-4 rounded-xl bg-red-950/40 border border-red-800 text-red-300 text-sm flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold">Không thể nạp file câu hỏi từ đường dẫn public:</p>
-              <p className="text-xs text-red-400 mt-1">{error}</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 rounded-xl bg-[#0d160e] border border-[#233526] space-y-2">
+            <div className="w-8 h-8 rounded-lg bg-red-600/20 text-red-400 flex items-center justify-center font-black text-sm border border-red-600/40">
+              1
             </div>
-          </div>
-        )}
-
-        {/* Danh sách câu hỏi mẫu được nạp */}
-        {!loading && questions.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-xs uppercase font-bold tracking-wider text-slate-400">
-              Xem thử 5 câu hỏi mẫu về Chủ đề 6 (Nhấp vào câu để xem đáp án đúng & giải thích):
+            <h3 className="font-bold text-white text-sm">Trả Lời & Đẩy Xe Tăng</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Mỗi câu trả lời đúng cộng <strong>100 điểm + (Streak x 20)</strong> và đẩy xe tăng của cánh quân tiến lên <strong>+4%</strong> (hoặc <strong>+8%</strong> nếu có Mệnh lệnh Thần tốc).
             </p>
-            <div className="space-y-3">
-              {questions.map((q) => {
-                const isExpanded = expandedQuestionId === q.id;
-                return (
-                  <div
-                    key={q.id}
-                    className="border border-military-border/80 rounded-xl bg-military-dark/60 overflow-hidden transition-all"
-                  >
-                    <button
-                      onClick={() => setExpandedQuestionId(isExpanded ? null : q.id)}
-                      className="w-full text-left p-4 flex items-start justify-between gap-4 hover:bg-military-card/50 transition-colors"
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-vietnam-red/20 text-vietnam-yellow border border-vietnam-red/40 flex items-center justify-center font-bold text-xs">
-                          {q.id}
-                        </span>
-                        <span className="font-semibold text-sm text-slate-200">{q.text}</span>
-                      </div>
-                      <span className="text-xs text-slate-400 px-2 py-1 rounded bg-slate-800 flex-shrink-0">
-                        {isExpanded ? 'Thu gọn' : 'Chi tiết'}
-                      </span>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="p-4 pt-1 border-t border-slate-800/80 bg-slate-950/40 space-y-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                          {(['A', 'B', 'C', 'D'] as const).map((key) => {
-                            const isCorrect = q.correctAnswer === key;
-                            return (
-                              <div
-                                key={key}
-                                className={`p-2.5 rounded-lg border flex items-start gap-2 ${
-                                  isCorrect
-                                    ? 'bg-emerald-950/40 border-emerald-600/50 text-emerald-200'
-                                    : 'bg-slate-900/60 border-slate-800 text-slate-300'
-                                }`}
-                              >
-                                <span className={`font-bold px-1.5 py-0.5 rounded text-[11px] ${
-                                  isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                                }`}>
-                                  {key}
-                                </span>
-                                <span className="flex-1">{q.options[key]}</span>
-                                {isCorrect && (
-                                  <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
-                                    Đáp án đúng
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {q.explanation && (
-                          <div className="p-3 rounded-lg bg-amber-950/20 border border-amber-800/40 text-xs text-amber-200 flex items-start gap-2">
-                            <span className="font-bold text-vietnam-gold flex-shrink-0">💡 Giải thích:</span>
-                            <span>{q.explanation}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
           </div>
-        )}
+
+          <div className="p-4 rounded-xl bg-[#0d160e] border border-[#233526] space-y-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-sm border border-amber-500/40">
+              2
+            </div>
+            <h3 className="font-bold text-white text-sm">Tích Lũy Lệnh Bài</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Duy trì chuỗi đúng liên tiếp đạt <strong>Streak 3, 6, 9...</strong> để nhận Lệnh bài chiến thuật: Đường ống Trường Sơn, Lá chắn Trại Davis, Nghi binh Pleiku, Chặn đường số 7.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#0d160e] border border-[#233526] space-y-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm border border-emerald-500/40">
+              3
+            </div>
+            <h3 className="font-bold text-white text-sm">Cắm Cờ Toàn Thắng</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Cánh quân đầu tiên chạm mốc <strong>100%</strong> sẽ húc đổ cổng Dinh Độc Lập, cắm cờ Giải phóng và giành danh hiệu Vô địch toàn trận.
+            </p>
+          </div>
+        </div>
       </section>
 
-      {/* DANH SÁCH 6 CÁNH QUÂN LỊCH SỬ THAM GIA ĐUA */}
+      {/* ===================================================
+          6 CÁNH QUÂN THẦN TỐC LỊCH SỬ NĂM 1975
+          =================================================== */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-vietnam-yellow" />
-          <h2 className="text-xl font-bold text-white">6 Cánh Quân Lịch Sử (Tương ứng 6 Nhóm Đua trong Lớp)</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Users className="w-5 h-5 text-amber-400" />
+            <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wide">
+              6 Cánh Quân Lịch Sử (Tương Ứng 6 Nhóm Đua Trong Lớp)
+            </h2>
+          </div>
+          <span className="text-xs text-slate-400 hidden sm:inline">Nhóm 6 là Ban Quản Trò</span>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {INITIAL_TEAMS_CONFIG.map((team) => (
             <div
               key={team.id}
-              className="p-4 rounded-xl border border-military-border bg-military-surface/60 flex flex-col justify-between"
+              className="p-4 rounded-2xl border border-[#2b422e] bg-[#141f16]/80 flex flex-col justify-between space-y-3 hover:border-amber-400/50 transition-all shadow"
             >
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-black text-sm text-white">{team.name}</span>
+                  <span className="font-black text-sm text-white flex items-center gap-1.5">
+                    <span 
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: team.color }}
+                    />
+                    {team.name}
+                  </span>
                   <span 
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
-                    style={{ backgroundColor: `${team.color}25`, color: team.color, border: `1px solid ${team.color}40` }}
+                    className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase"
+                    style={{ backgroundColor: `${team.color}25`, color: team.color, border: `1px solid ${team.color}50` }}
                   >
-                    {team.axisName}
+                    Xe tăng {team.tankNumber}
                   </span>
                 </div>
-                <h3 className="text-sm font-semibold text-slate-200">{team.corpsName}</h3>
+                <h3 className="text-xs font-bold text-slate-200">{team.corpsName}</h3>
+                <p className="text-[11px] text-amber-300/80">{team.axisName}</p>
               </div>
-              <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-                <span>Tiến độ ban đầu: 0%</span>
-                <span className="text-emerald-400 font-medium">Sẵn sàng xuất kích</span>
+
+              <div className="pt-2 border-t border-[#1e2e21] flex items-center justify-between text-[11px] text-slate-400">
+                <span>Vạch xuất kích: 0%</span>
+                <span className="text-emerald-400 font-bold">Sẵn sàng nhận lệnh</span>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* 5 CỘT MỐC LỊCH SỬ TIẾN QUÂN (0% -> 100%) */}
+      {/* ===================================================
+          5 CỘT MỐC LỊCH SỬ TIẾN QUÂN (0% -> 100%)
+          =================================================== */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Flag className="w-5 h-5 text-vietnam-red" />
-          <h2 className="text-xl font-bold text-white">5 Cột Mốc Lịch Sử Tiến Độ Chiến Dịch</h2>
+        <div className="flex items-center gap-2.5">
+          <Flag className="w-5 h-5 text-red-500" />
+          <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wide">
+            5 Cột Mốc Lịch Sử Trên Sa Bàn Tiến Quân
+          </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
           {HISTORICAL_MILESTONES.map((milestone) => (
             <div
               key={milestone.percentage}
-              className="p-3.5 rounded-xl border border-military-border bg-military-dark/80 space-y-2 flex flex-col justify-between"
+              className="p-4 rounded-2xl border border-[#2b422e] bg-[#0d160e]/90 space-y-2.5 flex flex-col justify-between shadow"
             >
               <div>
-                <span className="text-xs font-black text-vietnam-yellow bg-vietnam-red/30 px-2 py-0.5 rounded border border-vietnam-red/40">
-                  {milestone.percentage}% TIẾN ĐỘ
+                <span className="text-xs font-black text-amber-300 bg-red-950/80 px-2.5 py-0.5 rounded-md border border-red-800/80 inline-block">
+                  MỐC {milestone.percentage}%
                 </span>
-                <h3 className="text-sm font-bold text-white mt-2">{milestone.title}</h3>
-                <p className="text-xs text-slate-400 mt-1 line-clamp-3">{milestone.description}</p>
+                <h3 className="text-sm font-black text-white mt-2 leading-snug">{milestone.title}</h3>
+                <p className="text-[11px] font-bold text-amber-400/90 mt-0.5">{milestone.subTitle}</p>
               </div>
-              <p className="text-[11px] text-amber-300/80 italic pt-2 border-t border-slate-800">
+              <p className="text-[11px] text-slate-400 italic pt-2 border-t border-[#1e2e21] leading-relaxed">
                 {milestone.historicalEvent}
               </p>
             </div>

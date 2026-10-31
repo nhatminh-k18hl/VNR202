@@ -13,14 +13,14 @@ import {
   Download, 
   CheckCircle2, 
   Flame, 
-  Users, 
   Lock, 
   LogOut, 
-  Sparkles, 
   Volume2, 
-  VolumeX,
-  ExternalLink,
-  Award
+  VolumeX, 
+  ExternalLink, 
+  Award,
+  Radio,
+  Compass
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { QRCodeSVG } from 'qrcode.react';
@@ -91,7 +91,6 @@ export const AdminPage: React.FC = () => {
     sessionStorage.removeItem('than_toc_admin_auth');
   };
 
-  // Hiệu ứng pháo hoa khi cắm cờ toàn thắng
   const triggerFireworks = () => {
     try {
       confetti({
@@ -119,29 +118,28 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Các thao tác điều khiển nhịp độ trận đấu
   const handleStartBattle = () => {
     gameSyncService.setGamePhase('BATTLE');
-    setNotice('Đã phát lệnh Tổng tiến công! Chiến trường đang diễn ra sôi nổi.');
+    setNotice('🚀 ĐÃ PHÁT LỆNH TỔNG TIẾN CÔNG! 6 CÁNH QUÂN THẦN TỐC XUẤT KÍCH!');
   };
 
   const handlePauseBattle = () => {
     gameSyncService.setGamePhase('PAUSED');
-    setNotice('Đã tạm dừng trận đấu.');
+    setNotice('⏸️ Đã tạm dừng bước tiến quân trên toàn mặt trận.');
   };
 
   const handleResetBattle = () => {
-    if (window.confirm('Bạn có chắc chắn muốn làm mới toàn bộ tiến độ và điểm số để bắt đầu ván mới?')) {
+    if (window.confirm('Bạn có chắc chắn muốn làm mới sa bàn để chuẩn bị ván đấu mới?')) {
       gameSyncService.resetGame();
       setShowStatsModal(false);
-      setNotice('Đã làm mới chiến trường thành công.');
+      setNotice('Đã làm mới sa bàn tác chiến thành công.');
     }
   };
 
   const handleToggleBots = () => {
     const nextState = !gameState.roomState.isBotActive;
     gameSyncService.setBotActive(nextState);
-    setNotice(nextState ? 'Đã bật 18 học viên giả lập chia đều cho 6 đội.' : 'Đã tắt học viên giả lập.');
+    setNotice(nextState ? '🤖 Đã điều động 18 chiến sĩ thực binh (Bot) chia đều 6 cánh quân!' : 'Đã tạm dừng diễn tập thực binh.');
   };
 
   const handleOpenStatsModal = () => {
@@ -152,7 +150,7 @@ export const AdminPage: React.FC = () => {
 
   const handleSaveFirebaseUrl = () => {
     gameSyncService.setCloudDbUrl(firebaseUrlInput);
-    setNotice('Đã lưu cấu hình Firebase Database URL thành công!');
+    setNotice('Đã lưu cấu hình kết nối Cloud Realtime!');
   };
 
   const handleUploadMarkdownFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +163,7 @@ export const AdminPage: React.FC = () => {
       const parsed = parseQuestionsMarkdown(content);
       if (parsed.length > 0) {
         gameSyncService.setCustomQuestions(parsed);
-        setNotice(`Đã nạp thành công ${parsed.length} câu hỏi từ file "${file.name}"!`);
+        setNotice(`Đã nạp thành công ${parsed.length} câu hỏi mới từ file "${file.name}"!`);
         setShowQuestionModal(false);
       } else {
         alert('File không chứa định dạng câu hỏi hợp lệ theo chuẩn "# Câu X"!');
@@ -190,18 +188,17 @@ export const AdminPage: React.FC = () => {
     ? `${window.location.origin}${window.location.pathname}#/play`
     : 'https://nhatminh-k18hl.github.io/VNR202/#/play';
 
-  // Kiểm tra xem đã có đội nào về đích 100% chưa
   const winningTeam = gameState.teams.find((t) => t.progress >= 100);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-military-border pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#233526] pb-4">
         <Link 
           to="/" 
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Về Trang Chủ
+          <ArrowLeft className="w-4 h-4 text-amber-400" /> Về Trang Tổng Quan
         </Link>
 
         <div className="flex items-center gap-3">
@@ -210,23 +207,23 @@ export const AdminPage: React.FC = () => {
               const muted = soundService.toggleMute();
               setIsMuted(muted);
             }}
-            className="p-1.5 rounded-lg bg-military-card border border-military-border text-slate-300 hover:text-white"
+            className="p-1.5 rounded-xl bg-[#141f16] border border-[#2b422e] text-slate-300 hover:text-white"
             title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
           </button>
 
-          <span className="text-xs font-black px-3 py-1.5 rounded-full bg-vietnam-red/20 text-red-300 border border-vietnam-red/40 flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-vietnam-red" />
+          <span className="text-xs font-black px-3.5 py-1.5 rounded-full bg-red-950 border border-red-700 text-amber-300 flex items-center gap-2 shadow-lg">
+            <ShieldAlert className="w-4 h-4 text-red-500" />
             {ADMIN_CONFIG.roleName}
           </span>
 
           {isAuthenticated && (
             <button
               onClick={handleLogout}
-              className="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 border border-slate-700 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 border border-slate-700 transition-colors"
             >
-              <LogOut className="w-3.5 h-3.5" /> Thoát
+              <LogOut className="w-3.5 h-3.5" /> Đăng Xuất
             </button>
           )}
         </div>
@@ -234,143 +231,148 @@ export const AdminPage: React.FC = () => {
 
       {!isAuthenticated ? (
         /* ===================================================
-           FORM ĐĂNG NHẬP ADMIN CHỈ HUY SỞ
+           CỔNG ĐĂNG NHẬP CHỈ HUY SỞ
            =================================================== */
-        <div className="max-w-md mx-auto bg-military-surface border border-military-border rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div className="max-w-md mx-auto bg-[#141f16]/95 border-2 border-[#2b422e] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-vietnam-red/20 border border-vietnam-red/40 text-red-400 flex items-center justify-center mx-auto mb-2">
+            <div className="w-16 h-16 rounded-2xl bg-red-600/15 border-2 border-red-500/50 text-red-400 flex items-center justify-center mx-auto mb-2 shadow-lg">
               <Lock className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl font-black text-white">Chỉ Huy Sở - Đăng Nhập</h1>
+            <span className="military-stamp px-3 py-0.5 text-[10px]">
+              KHU VỰC BẢO MẬT
+            </span>
+            <h1 className="text-2xl font-black text-white uppercase tracking-wide">
+              Chỉ Huy Sở Tiền Phương
+            </h1>
             <p className="text-xs text-slate-300">
-              Khu vực dành riêng cho Ban Tổ Chức (Nhóm 6 - VNR202) để quản trị sa bàn và điều phối nhịp độ.
+              Khu vực dành riêng cho Ban Quản Trò (Nhóm 6 - VNR202) để điều hành sa bàn tác chiến.
             </p>
           </div>
 
           {loginError && (
-            <div className="p-3 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs">
+            <div className="p-3 rounded-xl bg-red-950/80 border border-red-800 text-red-300 text-xs text-center font-bold">
               {loginError}
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Tên đăng nhập:
+              <label className="block text-xs font-black text-slate-300 uppercase tracking-wider">
+                Tên đăng nhập Chỉ Huy:
               </label>
               <input
                 type="text"
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 required
-                className="w-full bg-military-dark border border-military-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-vietnam-red focus:ring-1 focus:ring-vietnam-red"
+                className="w-full bg-[#0d160e] border border-[#2b422e] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-medium"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Mật khẩu:
+              <label className="block text-xs font-black text-slate-300 uppercase tracking-wider">
+                Mật mã tác chiến:
               </label>
               <input
                 type="password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 required
-                className="w-full bg-military-dark border border-military-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-vietnam-red focus:ring-1 focus:ring-vietnam-red"
+                className="w-full bg-[#0d160e] border border-[#2b422e] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-medium"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-vietnam-red to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold text-sm uppercase tracking-wider transition-all shadow-lg"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 via-red-700 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-black text-sm uppercase tracking-wider transition-all shadow-xl shadow-red-950/60"
             >
-              Mở Khóa Chỉ Huy Sở
+              Mở Khóa Sở Chỉ Huy
             </button>
           </form>
 
-          <div className="pt-3 border-t border-military-border/80 text-xs text-slate-400 space-y-1 bg-military-dark/50 p-3 rounded-xl">
+          <div className="pt-3 border-t border-[#233526] text-xs text-slate-400 space-y-1 bg-[#0d160e] p-3.5 rounded-2xl">
             <p className="font-bold text-slate-300">Thông tin đăng nhập mặc định:</p>
-            <p>• Tài khoản: <code className="text-vietnam-yellow">admin_nhom6</code></p>
-            <p>• Mật khẩu: <code className="text-vietnam-yellow">30041975</code></p>
+            <p>• Tài khoản: <code className="text-amber-300 font-bold">admin_nhom6</code></p>
+            <p>• Mật khẩu: <code className="text-amber-300 font-bold">30041975</code></p>
           </div>
         </div>
       ) : (
         /* ===================================================
-           GIAO DIỆN QUẢN TRỊ TRUNG TÂM (CHỈ HUY SỞ MẶT TRẬN)
+           BỘ TỔNG TƯ LỆNH TIỀN PHƯƠNG (ADMIN DASHBOARD)
            =================================================== */
         <div className="space-y-6">
-          {/* THANH CÔNG CỤ QUẢN TRÒ (CONTROL BAR) */}
-          <div className="bg-military-surface border border-military-border rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+          {/* THANH ĐIỀU KHIỂN TÁC CHIẾN (COMMAND CONTROL BAR) */}
+          <div className="bg-[#141f16]/95 border-2 border-[#2b422e] rounded-3xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Nút Bắt đầu / Tạm dừng */}
               {gameState.roomState.phase === 'BATTLE' ? (
                 <button
                   onClick={handlePauseBattle}
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                  className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg"
                 >
                   <Pause className="w-4 h-4" /> Tạm Dừng
                 </button>
               ) : (
                 <button
                   onClick={handleStartBattle}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg"
                 >
-                  <Play className="w-4 h-4 fill-white" /> Bắt Đầu Chiến Dịch
+                  <Play className="w-4 h-4 fill-white" /> Phát Lệnh Tấn Công
                 </button>
               )}
 
-              {/* Nút Bật/Tắt Bot Giả Lập 18 Học Viên */}
+              {/* Nút Diễn tập Thực binh (18 Bot) */}
               <button
                 onClick={handleToggleBots}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
+                className={`px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border transition-all ${
                   gameState.roomState.isBotActive
-                    ? 'bg-purple-950/70 border-purple-500 text-purple-200'
-                    : 'bg-military-card border-military-border text-slate-300 hover:text-white'
+                    ? 'bg-purple-950 border-purple-500 text-purple-200 shadow-lg shadow-purple-950/60'
+                    : 'bg-[#0d160e] border-[#233526] text-slate-300 hover:text-white'
                 }`}
               >
                 <Bot className="w-4 h-4 text-purple-400" />
-                {gameState.roomState.isBotActive ? 'Tắt Bot Giả Lập' : 'Gọi 18 Bot Chạy Thử'}
+                {gameState.roomState.isBotActive ? 'Dừng 18 Bot Giả Lập' : 'Gọi 18 Bot Diễn Tập'}
               </button>
 
-              {/* Nút Kết thúc & Xem Thống kê */}
+              {/* Nút Kết thúc & Vinh danh */}
               <button
                 onClick={handleOpenStatsModal}
-                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg"
               >
-                <Trophy className="w-4 h-4" /> Kết Thúc & Xem Thống Kê
+                <Trophy className="w-4 h-4" /> Tổng Kết Chiến Công
               </button>
 
-              {/* Nút Làm mới ván đấu */}
+              {/* Nút Làm mới ván */}
               <button
                 onClick={handleResetBattle}
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1.5 border border-slate-700"
+                className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1.5 border border-slate-700"
               >
-                <RotateCcw className="w-3.5 h-3.5" /> Reset Ván Mới
+                <RotateCcw className="w-3.5 h-3.5" /> Làm Mới Sa Bàn
               </button>
             </div>
 
-            {/* Các tiện ích: Mã QR & Đổi câu hỏi */}
-            <div className="flex items-center gap-2">
+            {/* Tiện ích Quản trò: Chiếu QR & Quản lý bộ đề */}
+            <div className="flex items-center gap-2.5">
               <button
                 onClick={() => setShowQuestionModal(true)}
-                className="px-3 py-2 rounded-xl bg-military-card border border-military-border text-vietnam-yellow hover:border-vietnam-yellow text-xs font-bold flex items-center gap-1.5"
+                className="px-3.5 py-2.5 rounded-xl bg-[#0d160e] border border-[#233526] text-amber-300 hover:border-amber-400 text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
               >
-                <FileText className="w-4 h-4" /> Đổi Bộ Câu Hỏi (.md)
+                <FileText className="w-4 h-4" /> Nạp Bộ Câu Hỏi (.md)
               </button>
 
               <button
                 onClick={() => setShowQrModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-vietnam-red to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-red-700 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-xl shadow-red-950/60"
               >
-                <QrCode className="w-4 h-4" /> Chiếu Mã QR
+                <QrCode className="w-4 h-4" /> Chiếu Mã QR Điểm Danh
               </button>
             </div>
           </div>
 
-          {/* Banner Thông Báo */}
+          {/* Banner Thông Báo Chỉ Huy */}
           {notice && (
-            <div className="p-3 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 flex items-center justify-between">
-              <span className="flex items-center gap-2">
+            <div className="p-3.5 rounded-2xl bg-[#0d160e] border border-[#2b422e] text-xs text-amber-200 flex items-center justify-between shadow">
+              <span className="flex items-center gap-2.5 font-bold">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 {notice}
               </span>
@@ -381,36 +383,41 @@ export const AdminPage: React.FC = () => {
           )}
 
           {/* ===================================================
-              SA BÀN ĐƯỜNG ĐUA 6 LÀN XE TĂNG (MAIN RACE TRACK)
+              SA BÀN ĐƯỜNG ĐUA ĐỊA HÌNH 6 LÀN TIẾN QUÂN
               =================================================== */}
-          <div className="bg-military-surface border border-military-border rounded-2xl p-5 space-y-4 shadow-2xl overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-military-border pb-3">
+          <div className="bg-[#141f16]/95 border-2 border-[#2b422e] rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#233526] pb-3">
               <div>
                 <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wide">
-                  <span className="text-vietnam-red">★</span> Sa Bàn Tiến Quân Thần Tốc - Mặt Trận Sài Gòn
+                  <span className="text-red-500">★</span> Sa Bàn Tác Chiến Thần Tốc • 5 Cánh Quân Hợp Điểm
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Mô phỏng 6 Cánh quân thi đua cắm cờ tại Dinh Độc Lập trưa ngày 30/4/1975
+                  Mô phỏng 5 cánh quân lịch sử cùng mũi đột kích nội đô tiến vào giải phóng Sài Gòn
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 text-xs font-bold text-slate-300">
-                <span>Trạng thái: <strong className={gameState.roomState.phase === 'BATTLE' ? 'text-emerald-400' : 'text-amber-400'}>{gameState.roomState.phase}</strong></span>
-                <span>Tổng chiến sĩ: <strong className="text-vietnam-yellow">{gameState.players.length}</strong></span>
+              <div className="flex items-center gap-4 text-xs font-black">
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <Radio className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                  Mặt trận: <strong className={gameState.roomState.phase === 'BATTLE' ? 'text-emerald-400' : 'text-amber-400'}>{gameState.roomState.phase}</strong>
+                </span>
+                <span className="text-slate-300">
+                  Quân số: <strong className="text-amber-300">{gameState.players.length} Chiến Sĩ</strong>
+                </span>
               </div>
             </div>
 
-            {/* Cột Mốc Lịch Sử Phía Trên Sa Bàn (0% -> 100%) */}
-            <div className="relative w-full h-8 flex items-center justify-between px-3 text-[11px] font-extrabold text-slate-400 border-b border-slate-800">
+            {/* Các Cột Mốc Địa Hình Lịch Sử Trên Đường Đua (0% -> 100%) */}
+            <div className="relative w-full h-8 flex items-center justify-between px-3 text-[11px] font-black text-slate-400 border-b border-[#233526]">
               {HISTORICAL_MILESTONES.map((m) => (
                 <div key={m.percentage} className="flex flex-col items-center">
-                  <span className="text-vietnam-yellow">{m.percentage}%</span>
-                  <span className="text-[10px] text-slate-400 whitespace-nowrap">{m.title}</span>
+                  <span className="text-amber-300">{m.percentage}%</span>
+                  <span className="text-[10px] text-slate-300 whitespace-nowrap">{m.title}</span>
                 </div>
               ))}
             </div>
 
-            {/* 6 LÀN ĐƯỜNG ĐUA CHO 6 CÁNH QUÂN */}
+            {/* 6 LÀN TIẾN QUÂN CỦA 6 CÁNH QUÂN */}
             <div className="space-y-3.5 pt-2">
               {gameState.teams.map((team: TeamState) => {
                 const isWinner = team.progress >= 100;
@@ -421,46 +428,43 @@ export const AdminPage: React.FC = () => {
                 return (
                   <div
                     key={team.id}
-                    className="relative bg-military-dark/90 border border-military-border rounded-xl p-3 flex flex-col justify-between overflow-hidden shadow"
+                    className="relative bg-[#0d160e] border border-[#233526] rounded-2xl p-3.5 flex flex-col justify-between overflow-hidden shadow-lg"
                   >
-                    {/* Thông tin đội đua bên trái */}
+                    {/* Thông tin cánh quân bên trên làn đua */}
                     <div className="flex items-center justify-between text-xs z-10 mb-2">
                       <div className="flex items-center gap-2">
                         <span 
-                          className="font-black px-2 py-0.5 rounded text-white text-[11px]"
+                          className="font-black px-2.5 py-0.5 rounded-md text-white text-[11px] shadow"
                           style={{ backgroundColor: team.color }}
                         >
                           {team.name}
                         </span>
-                        <span className="font-bold text-slate-200 text-xs">{team.corpsName}</span>
-                        <span className="text-[10px] text-slate-400">({team.axisName})</span>
+                        <span className="font-extrabold text-slate-200 text-xs">{team.corpsName}</span>
+                        <span className="text-[10px] text-amber-300 font-bold">({team.axisName})</span>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs">
-                        {/* Các icon hiệu ứng đang tác động */}
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-3.5 text-xs">
+                        <div className="flex items-center gap-1.5">
                           {hasShield && <span title="Lá chắn Trại Davis">🛡️</span>}
                           {isDeception && <span title="Nghi binh Pleiku">🎭</span>}
                           {isSlowed && <span title="Chặn đường số 7">🚧</span>}
                         </div>
 
-                        <span className="text-slate-400">Chiến sĩ: <strong className="text-white">{team.memberCount}</strong></span>
-                        <span className="text-slate-400">Điểm: <strong className="text-vietnam-yellow">{team.totalScore}</strong></span>
-                        <span className="font-black text-vietnam-yellow text-sm">{team.progress}%</span>
+                        <span className="text-slate-400 font-medium">Quân số: <strong className="text-white">{team.memberCount}</strong></span>
+                        <span className="text-slate-400 font-medium">Điểm: <strong className="text-amber-300">{team.totalScore}</strong></span>
+                        <span className="font-black text-amber-300 text-sm">{team.progress}%</span>
                       </div>
                     </div>
 
-                    {/* LÀN ĐƯỜNG ĐUA NGANG */}
-                    <div className="relative w-full h-16 bg-slate-950/80 rounded-lg border border-slate-800 flex items-center overflow-hidden px-2">
-                      {/* Vạch kẻ đường đứt đoạn */}
-                      <div className="absolute inset-x-0 h-0.5 border-b border-dashed border-slate-700/60" />
+                    {/* MẶT ĐƯỜNG ĐUA SA BÀN */}
+                    <div className="relative w-full h-16 bg-[#070b08] rounded-xl border border-[#1b2b1d] flex items-center overflow-hidden px-2 shadow-inner">
+                      {/* Vạch kẻ đường chiến lược */}
+                      <div className="absolute inset-x-0 h-0.5 border-b border-dashed border-[#2b422e]" />
+                      <div className="absolute left-[25%] top-0 bottom-0 w-px bg-[#1e2e21]" />
+                      <div className="absolute left-[50%] top-0 bottom-0 w-px bg-[#1e2e21]" />
+                      <div className="absolute left-[75%] top-0 bottom-0 w-px bg-[#1e2e21]" />
 
-                      {/* Vạch kẻ các mốc 25%, 50%, 75% */}
-                      <div className="absolute left-[25%] top-0 bottom-0 w-px bg-slate-800" />
-                      <div className="absolute left-[50%] top-0 bottom-0 w-px bg-slate-800" />
-                      <div className="absolute left-[75%] top-0 bottom-0 w-px bg-slate-800" />
-
-                      {/* CHIẾC XE TĂNG T-54/59 DI CHUYỂN DỌC THEO TIẾN ĐỘ (%) */}
+                      {/* XE TĂNG T-54 HÚC CỔNG DI CHUYỂN DỌC THEO TIẾN ĐỘ (%) */}
                       <div
                         className="absolute transition-all duration-700 ease-out z-20"
                         style={{
@@ -493,24 +497,24 @@ export const AdminPage: React.FC = () => {
               })}
             </div>
 
-            {/* ===================================================
-                BẢNG NHẬT KÝ CHIẾN TRƯỜNG (LIVE BATTLE FEED)
-                =================================================== */}
-            <div className="pt-3 border-t border-military-border">
-              <span className="text-xs font-black uppercase text-slate-400 block mb-2 flex items-center gap-1.5">
-                <Flame className="w-4 h-4 text-orange-400 fill-orange-400" /> Nhật Ký Tác Chiến Thời Gian Thực (Live Battle Feed)
+            {/* BẢNG ĐIỆN TÍN CHIẾN TRƯỜNG THỜI GIAN THỰC */}
+            <div className="pt-3 border-t border-[#233526]">
+              <span className="text-xs font-black uppercase text-amber-300 block mb-2 flex items-center gap-1.5">
+                <Flame className="w-4 h-4 text-orange-400 fill-orange-400" /> Bản Tin Tác Chiến Thời Gian Thực (Live Battle Telegraph)
               </span>
 
-              <div className="h-28 overflow-y-auto space-y-1.5 pr-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs">
+              <div className="h-28 overflow-y-auto space-y-1.5 pr-2 bg-[#070b08] p-3 rounded-2xl border border-[#1e2e21] text-xs">
                 {gameState.liveEvents.map((ev) => (
                   <div key={ev.id} className="flex items-center justify-between text-slate-300">
                     <span className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        {new Date(ev.timestamp).toLocaleTimeString()}
+                      <span className="text-[10px] text-amber-400/80 font-mono">
+                        [{new Date(ev.timestamp).toLocaleTimeString()}]
                       </span>
                       <span>{ev.message}</span>
                     </span>
-                    <span className="text-[10px] font-bold uppercase text-slate-500">{ev.type}</span>
+                    <span className="text-[9px] font-black uppercase text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                      {ev.type}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -520,16 +524,15 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* ===================================================
-          MODAL MÃ QR & CÀI ĐẶT PHÒNG CLOUD
+          MODAL CHIẾU MÃ QR CHO CẢ LỚP ĐIỂM DANH
           =================================================== */}
       {showQrModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-military-surface border border-military-border rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-military-border pb-3">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-vietnam-yellow" />
-                Mã QR Điểm Danh & Tham Gia Chiến Trường
-              </h3>
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#141f16] border-2 border-amber-400/80 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl text-center">
+            <div className="flex items-center justify-between border-b border-[#233526] pb-3">
+              <span className="military-stamp px-3 py-0.5 text-[10px]">
+                LỆNH ĐỘNG VIÊN
+              </span>
               <button
                 onClick={() => setShowQrModal(false)}
                 className="text-slate-400 hover:text-white text-sm"
@@ -538,33 +541,39 @@ export const AdminPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Mã QR Cỡ Lớn Để Chiếu Bảng */}
-            <div className="flex flex-col items-center justify-center space-y-3 bg-white p-6 rounded-2xl shadow-inner mx-auto max-w-xs">
+            <div className="space-y-1">
+              <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wide">
+                Quét Mã QR Tham Gia Chiến Trường
+              </h3>
+              <p className="text-xs text-slate-300">
+                Sinh viên dùng Camera điện thoại quét mã bên dưới để vào màn hình tác chiến:
+              </p>
+            </div>
+
+            {/* Mã QR Cỡ Lớn */}
+            <div className="bg-white p-6 rounded-3xl inline-block mx-auto shadow-2xl border-4 border-amber-400">
               <QRCodeSVG
                 value={playUrl}
-                size={220}
+                size={230}
                 level="H"
                 includeMargin={false}
               />
-              <span className="text-slate-800 text-xs font-bold text-center">
-                Quét mã để vào màn hình Chiến sĩ
-              </span>
             </div>
 
-            <div className="space-y-1.5 text-center">
-              <p className="text-xs text-slate-300">Hoặc mở trực tiếp đường dẫn:</p>
+            <div className="space-y-1">
+              <span className="text-[11px] text-slate-400 block">Đường dẫn trực tiếp:</span>
               <a
                 href={playUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-vietnam-yellow underline hover:text-yellow-300 font-bold inline-flex items-center gap-1"
+                className="text-xs text-amber-300 hover:underline font-bold inline-flex items-center gap-1.5"
               >
                 {playUrl} <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
 
-            {/* Cài đặt Cloud Firebase URL */}
-            <div className="space-y-2 pt-3 border-t border-slate-800 text-xs">
+            {/* Cài đặt Cloud Realtime Database URL */}
+            <div className="pt-3 border-t border-[#233526] text-left text-xs space-y-2">
               <label className="block font-bold text-slate-300">
                 Đồng bộ Cloud Realtime (Firebase Database URL - Tùy chọn):
               </label>
@@ -574,11 +583,11 @@ export const AdminPage: React.FC = () => {
                   placeholder="https://your-firebase-project.firebaseio.com"
                   value={firebaseUrlInput}
                   onChange={(e) => setFirebaseUrlInput(e.target.value)}
-                  className="flex-1 bg-military-dark border border-military-border rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-vietnam-yellow"
+                  className="flex-1 bg-[#0d160e] border border-[#2b422e] rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-amber-400"
                 />
                 <button
                   onClick={handleSaveFirebaseUrl}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+                  className="px-3 py-2 rounded-xl bg-[#1b2b1d] hover:bg-[#253a28] text-amber-300 font-bold text-xs border border-[#2b422e]"
                 >
                   Lưu URL
                 </button>
@@ -587,7 +596,7 @@ export const AdminPage: React.FC = () => {
 
             <button
               onClick={() => setShowQrModal(false)}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase"
             >
               Đóng Cửa Sổ
             </button>
@@ -596,14 +605,14 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* ===================================================
-          MODAL ĐỔI BỘ CÂU HỎI (.MD)
+          MODAL QUẢN LÝ BỘ CÂU HỎI (.MD)
           =================================================== */}
       {showQuestionModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-military-surface border border-military-border rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-military-border pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-vietnam-yellow" />
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#141f16] border-2 border-[#2b422e] rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#233526] pb-3">
+              <h3 className="text-base font-black text-white flex items-center gap-2 uppercase">
+                <FileText className="w-5 h-5 text-amber-400" />
                 Cập Nhật Ngân Hàng Câu Hỏi Trắc Nghiệm (.md)
               </h3>
               <button
@@ -614,37 +623,35 @@ export const AdminPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Chọn file từ máy */}
-            <div className="p-4 rounded-xl bg-military-dark border border-military-border space-y-2">
-              <span className="text-xs font-bold text-slate-300 block">
-                Cách 1: Tải file .md từ máy tính:
+            <div className="p-4 rounded-2xl bg-[#0d160e] border border-[#233526] space-y-2">
+              <span className="text-xs font-black uppercase text-amber-300 block">
+                Cách 1: Tải file .md từ máy tính
               </span>
               <input
                 type="file"
                 accept=".md,.txt"
                 onChange={handleUploadMarkdownFile}
-                className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-vietnam-red file:text-white hover:file:bg-red-700 cursor-pointer"
+                className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"
               />
             </div>
 
-            {/* Dán nội dung Markdown */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-300 block">
-                Cách 2: Dán trực tiếp nội dung Markdown vào đây:
+              <span className="text-xs font-black uppercase text-amber-300 block">
+                Cách 2: Dán trực tiếp nội dung Markdown
               </span>
               <textarea
                 rows={8}
                 value={rawMarkdownInput}
                 onChange={(e) => setRawMarkdownInput(e.target.value)}
-                placeholder={`# Câu 1: Hội nghị Ban Chấp hành Trung ương Đảng lần thứ 21 (7/1973)...\n- [ ] A. Đấu tranh hòa bình\n- [x] B. Con đường bạo lực cách mạng\n- [ ] C. Rút quân\n- [ ] D. Đơn phương ngừng bắn\n> Giải thích: Lời giải chi tiết...`}
-                className="w-full bg-military-dark border border-military-border rounded-xl p-3 text-white text-xs font-mono focus:outline-none focus:border-vietnam-yellow"
+                placeholder={`# Câu 1: Hội nghị Ban Chấp hành Trung ương Đảng lần thứ 21 (7/1973)...\n- [ ] A. Đấu tranh hòa bình\n- [x] B. Con đường bạo lực cách mạng\n- [ ] C. Rút toàn bộ quân\n- [ ] D. Đơn phương ngừng bắn\n> Giải thích: Lời giải chi tiết...`}
+                className="w-full bg-[#0d160e] border border-[#2b422e] rounded-2xl p-3.5 text-white text-xs font-mono focus:outline-none focus:border-amber-400"
               />
               <button
                 onClick={handleApplyPastedMarkdown}
                 disabled={!rawMarkdownInput.trim()}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-vietnam-red to-red-700 hover:from-red-600 hover:to-red-800 disabled:opacity-50 text-white font-bold text-xs uppercase"
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider shadow-lg"
               >
-                Phân Tích & Nạp Câu Hỏi
+                Nạp Danh Sách Câu Hỏi
               </button>
             </div>
           </div>
@@ -652,17 +659,22 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* ===================================================
-          BẢNG VINH DANH & THỐNG KÊ CHI TIẾT CUỐI TRẬN (ANALYTICS MODAL)
+          BẢNG VÀNG VINH DANH CHIẾN CÔNG ĐẠI THẮNG 1975
           =================================================== */}
       {showStatsModal && summaryStats && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-military-surface border border-military-border rounded-2xl max-w-3xl w-full p-6 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between border-b border-military-border pb-3">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-vietnam-gold" />
-                <h3 className="text-xl font-black text-white uppercase tracking-wide">
-                  Bảng Vàng Vinh Danh Toàn Thắng 1975
-                </h3>
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-lg flex items-center justify-center p-4">
+          <div className="bg-[#141f16] border-2 border-amber-400 rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#233526] pb-4">
+              <div className="flex items-center gap-2.5">
+                <Trophy className="w-7 h-7 text-amber-400" />
+                <div>
+                  <span className="military-stamp px-3 py-0.5 text-[9px]">
+                    BẢNG VÀNG LẬP CÔNG
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wide">
+                    Đại Thắng Mùa Xuân 1975
+                  </h3>
+                </div>
               </div>
               <button
                 onClick={() => setShowStatsModal(false)}
@@ -672,85 +684,85 @@ export const AdminPage: React.FC = () => {
               </button>
             </div>
 
-            {/* 1. ĐỘI VÔ ĐỊCH & MVP ĐỘI THẮNG */}
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-vietnam-red/40 via-amber-950/40 to-slate-900 border-2 border-vietnam-yellow/60 space-y-3 relative overflow-hidden shadow-xl">
+            {/* 1. CÁNH QUÂN VÔ ĐỊCH & MVP TRẬN ĐẤU */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-red-950 via-amber-950/60 to-[#121c14] border-2 border-amber-400 space-y-3.5 relative overflow-hidden shadow-2xl">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase text-vietnam-yellow bg-vietnam-red/40 px-3 py-1 rounded-full border border-vietnam-red/60">
+                <span className="text-xs font-black uppercase text-amber-300 bg-red-900/80 px-3 py-1 rounded-full border border-red-700">
                   🏆 Cánh Quân Cắm Cờ Dinh Độc Lập Đầu Tiên
                 </span>
-                <span className="text-xs font-bold text-emerald-400">
+                <span className="text-xs font-black text-emerald-400">
                   Tiến độ: {summaryStats.winningTeam?.progress}%
                 </span>
               </div>
 
-              <h4 className="text-2xl font-black text-white">
+              <h4 className="text-2xl sm:text-3xl font-black text-white">
                 {summaryStats.winningTeam?.name} - {summaryStats.winningTeam?.corpsName}
               </h4>
               <p className="text-xs text-amber-200">
-                {summaryStats.winningTeam?.axisName} • Tổng điểm toàn đội: <strong>{summaryStats.winningTeam?.totalScore}đ</strong>
+                {summaryStats.winningTeam?.axisName} • Xe tăng {summaryStats.winningTeam?.tankNumber} • Tổng điểm: <strong>{summaryStats.winningTeam?.totalScore}đ</strong>
               </p>
 
               {summaryStats.winningTeamMvp && (
-                <div className="p-3.5 rounded-xl bg-military-dark/90 border border-amber-500/50 flex items-center justify-between text-xs mt-2">
+                <div className="p-4 rounded-2xl bg-[#0d160e]/90 border border-amber-400/50 flex items-center justify-between text-xs mt-3 shadow-lg">
                   <div>
-                    <span className="font-black text-vietnam-gold block text-[11px] uppercase">
+                    <span className="font-black text-amber-300 block text-[11px] uppercase">
                       🎖️ MVP TRẬN ĐẤU (Chiến sĩ xuất sắc nhất đội Vô Địch):
                     </span>
                     <span className="text-base font-black text-white">{summaryStats.winningTeamMvp.name}</span>
                     <span className="text-slate-400 block text-[11px]">MSSV: {summaryStats.winningTeamMvp.studentCode || 'N/A'}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-base font-black text-vietnam-yellow">{summaryStats.winningTeamMvp.score} Điểm</span>
-                    <span className="text-slate-400 block text-[11px]">Kỷ lục đúng liên tiếp: <strong>{summaryStats.winningTeamMvp.maxStreak}</strong></span>
+                    <span className="text-base font-black text-amber-300">{summaryStats.winningTeamMvp.score} Điểm</span>
+                    <span className="text-slate-400 block text-[11px]">Kỷ lục Streak: <strong>{summaryStats.winningTeamMvp.maxStreak}</strong></span>
                   </div>
                 </div>
               )}
             </div>
 
             {/* 2. BẢNG XẾP HẠNG 6 ĐỘI (TEAM PODIUM) */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-300">
-                1. Bảng Xếp Hạng Đua Điểm 6 Cánh Quân (Team Podium):
+            <div className="space-y-2.5">
+              <h4 className="text-xs font-black uppercase tracking-wider text-amber-300">
+                1. Bảng Xếp Hạng 6 Cánh Quân (Team Podium):
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-xs">
                 {summaryStats.teamRankings.map((team, idx) => (
                   <div
                     key={team.id}
-                    className={`p-3 rounded-xl border flex flex-col justify-between ${
+                    className={`p-3.5 rounded-2xl border-2 flex flex-col justify-between ${
                       idx === 0 
-                        ? 'bg-amber-950/40 border-amber-500/60' 
-                        : 'bg-military-dark border-slate-800'
+                        ? 'bg-amber-950/40 border-amber-400 shadow-md' 
+                        : 'bg-[#0d160e] border-[#233526]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-white">#{idx + 1} {team.name}</span>
-                      <span className="text-vietnam-yellow font-bold">{team.progress}%</span>
+                      <span className="font-black text-white">#{idx + 1} {team.name}</span>
+                      <span className="text-amber-300 font-black">{team.progress}%</span>
                     </div>
                     <p className="text-[11px] text-slate-400 truncate mt-1">{team.corpsName}</p>
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 pt-1 border-t border-slate-800">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2.5 pt-1.5 border-t border-[#1e2e21]">
                       <span>Điểm: <strong className="text-white">{team.totalScore}</strong></span>
-                      <span>Chiến sĩ: <strong className="text-white">{team.memberCount}</strong></span>
+                      <span>Quân số: <strong className="text-white">{team.memberCount}</strong></span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 3. MVP TỪNG ĐỘI THUA (SVP - CHIẾN SĨ GÁNH TEAM ĐỂ THẦY CÔ CỘNG ĐIỂM) */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-vietnam-gold" />
+            {/* 3. CHIẾN SĨ GÁNH TEAM TỪNG ĐỘI (SVP - DÀNH CHO THẦY CÔ CỘNG ĐIỂM) */}
+            <div className="space-y-2.5">
+              <h4 className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                <Award className="w-4 h-4 text-amber-400" />
                 2. Chiến Sĩ Kiên Cường Nhất Của Từng Đội Còn Lại (SVP - Trao Điểm Khuyến Khích):
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                 {summaryStats.losingTeamsMvps.map((info) => (
-                  <div key={info.teamId} className="p-3 rounded-xl bg-military-dark border border-slate-800 flex items-center justify-between">
+                  <div key={info.teamId} className="p-3.5 rounded-2xl bg-[#0d160e] border border-[#233526] flex items-center justify-between shadow">
                     <div>
-                      <span className="font-extrabold text-white text-xs block">{info.teamName}</span>
+                      <span className="font-black text-white text-xs block">{info.teamName}</span>
                       <span className="text-[11px] text-slate-400">{info.corpsName}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-black text-vietnam-yellow text-xs block">
+                      <span className="font-black text-amber-300 text-xs block">
                         {info.mvp ? info.mvp.name : 'Chưa có dữ liệu'}
                       </span>
                       {info.mvp && (
@@ -764,33 +776,31 @@ export const AdminPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 4. TOP 5 CHUỖI ĐÚNG DÀI NHẤT & TOP 10 ĐIỂM CÁ NHÂN */}
+            {/* 4. TOP 5 CHUỖI ĐÚNG & TOP 10 ĐIỂM */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              {/* Top Streak */}
               <div className="space-y-2">
-                <h4 className="font-black uppercase text-slate-300 flex items-center gap-1.5">
+                <h4 className="font-black uppercase text-amber-300 flex items-center gap-1.5">
                   <Flame className="w-4 h-4 text-orange-400 fill-orange-400" /> Top 5 Chuỗi Đúng Liên Tiếp:
                 </h4>
                 <div className="space-y-1.5">
                   {summaryStats.topStreakPlayers.map((p, idx) => (
-                    <div key={p.id} className="p-2 rounded-lg bg-military-dark border border-slate-800 flex items-center justify-between">
-                      <span><strong className="text-vietnam-yellow mr-1.5">#{idx + 1}</strong> {p.name}</span>
+                    <div key={p.id} className="p-2.5 rounded-xl bg-[#0d160e] border border-[#233526] flex items-center justify-between">
+                      <span><strong className="text-amber-300 mr-2">#{idx + 1}</strong> {p.name}</span>
                       <span className="font-black text-orange-400">{p.maxStreak} câu đúng</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Top Điểm */}
               <div className="space-y-2">
-                <h4 className="font-black uppercase text-slate-300 flex items-center gap-1.5">
-                  <Trophy className="w-4 h-4 text-vietnam-gold" /> Top Điểm Cá Nhân Cao Nhất:
+                <h4 className="font-black uppercase text-amber-300 flex items-center gap-1.5">
+                  <Trophy className="w-4 h-4 text-amber-400" /> Top Điểm Cá Nhân Toàn Mặt Trận:
                 </h4>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                   {summaryStats.topScorePlayers.map((p, idx) => (
-                    <div key={p.id} className="p-2 rounded-lg bg-military-dark border border-slate-800 flex items-center justify-between">
-                      <span><strong className="text-vietnam-yellow mr-1.5">#{idx + 1}</strong> {p.name}</span>
-                      <span className="font-black text-vietnam-yellow">{p.score}đ</span>
+                    <div key={p.id} className="p-2.5 rounded-xl bg-[#0d160e] border border-[#233526] flex items-center justify-between">
+                      <span><strong className="text-amber-300 mr-2">#{idx + 1}</strong> {p.name}</span>
+                      <span className="font-black text-amber-300">{p.score}đ</span>
                     </div>
                   ))}
                 </div>
@@ -798,17 +808,17 @@ export const AdminPage: React.FC = () => {
             </div>
 
             {/* Nút Xuất Báo Cáo CSV & Đóng */}
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+            <div className="pt-4 border-t border-[#233526] flex items-center justify-between gap-3">
               <button
                 onClick={() => exportPlayersToCSV(gameState.players, gameState.teams)}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow"
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg"
               >
                 <Download className="w-4 h-4" /> Xuất Báo Cáo Điểm Danh & Kết Quả (.CSV)
               </button>
 
               <button
                 onClick={() => setShowStatsModal(false)}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs"
+                className="px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs uppercase"
               >
                 Đóng Bảng Vinh Danh
               </button>

@@ -4,25 +4,22 @@ import {
   ArrowLeft, 
   Flame, 
   Shield, 
-  Zap, 
   User, 
   CheckCircle, 
-  Sparkles, 
   Volume2, 
   VolumeX, 
   AlertTriangle, 
-  Fuel, 
-  Trophy, 
   Check, 
   X,
-  Target
+  Target,
+  Award,
+  Compass
 } from 'lucide-react';
-import { BoostItem, ItemType, PlayerState, Question, TeamId, TeamState } from '../types/game';
+import { BoostItem, PlayerState, Question, TeamId, TeamState } from '../types/game';
 import { INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
 import { fetchAndParseQuestions } from '../utils/markdownParser';
 import { FullGameState, gameSyncService } from '../services/gameSyncService';
 import { soundService } from '../services/soundService';
-import { TankSvg } from '../assets/svg/TankSvg';
 
 export const PlayPage: React.FC = () => {
   // Đồng bộ toàn cục
@@ -48,7 +45,7 @@ export const PlayPage: React.FC = () => {
 
   const countdownTimerRef = useRef<any>(null);
 
-  // Đọc danh tính đã lưu
+  // Đọc danh tính đã lưu trong phiên trước
   useEffect(() => {
     const savedId = localStorage.getItem('than_toc_player_id');
     const savedName = localStorage.getItem('than_toc_player_name');
@@ -91,7 +88,6 @@ export const PlayPage: React.FC = () => {
   // Kiểm tra hiệu ứng đang tác động lên đội nhà
   const isDeceptionActive = currentTeam?.activeEffects.some((e) => e.type === 'PLEIKU_DECEPTION');
   const isRouteBlockActive = currentTeam?.activeEffects.some((e) => e.type === 'ROUTE_7_BLOCK');
-  const hasShield = currentTeam?.activeEffects.some((e) => e.type === 'DAVIS_SHIELD');
 
   const handleJoinBattle = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +121,7 @@ export const PlayPage: React.FC = () => {
 
     gameSyncService.submitAnswer(playerId, isCorrect);
 
-    // Bắt đầu đếm ngược 2.5s để tự động chuyển câu hỏi
+    // Đếm ngược 2.5s để tự động chuyển câu hỏi
     setExplanationCountdown(3);
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
 
@@ -154,7 +150,6 @@ export const PlayPage: React.FC = () => {
 
   const handleUseItem = (item: BoostItem) => {
     if (item.type === 'ROUTE_7_BLOCK') {
-      // Mở modal chọn đội đối thủ cần chặn đường
       setTargetSelectModalItem(item);
       return;
     }
@@ -180,52 +175,52 @@ export const PlayPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      {/* Top Header Navigation */}
-      <div className="flex items-center justify-between border-b border-military-border/80 pb-3">
+      {/* Thanh Điều Hướng Đỉnh Trang */}
+      <div className="flex items-center justify-between border-b border-[#233526] pb-3">
         <Link 
           to="/" 
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Về Trang Chủ
+          <ArrowLeft className="w-4 h-4 text-amber-400" /> Quay Lại Trang Chủ
         </Link>
 
         <div className="flex items-center gap-3">
           <button
             onClick={toggleSound}
-            className="p-1.5 rounded-lg bg-military-card border border-military-border text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-xl bg-[#141f16] border border-[#2b422e] text-slate-300 hover:text-white transition-colors"
             title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
           </button>
 
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-military-card border border-military-border text-vietnam-yellow">
-            Mặt Trận Sài Gòn 1975
+          <span className="text-[11px] font-black uppercase px-3 py-1 rounded-full bg-red-950/80 border border-red-800 text-amber-300 shadow">
+            Mặt Trận Sài Gòn • Tháng 4/1975
           </span>
         </div>
       </div>
 
       {!isJoined ? (
         /* ===================================================
-           MÀN HÌNH GIA NHẬP (NO-LOGIN)
+           MÀN HÌNH GIA NHẬP: LỆNH TỔNG ĐỘNG VIÊN XUẤT KÍCH
            =================================================== */
-        <div className="bg-military-surface/90 border border-military-border rounded-2xl p-6 md:p-8 space-y-6 shadow-2xl">
-          <div className="text-center space-y-2 border-b border-military-border pb-6">
-            <span className="text-xs font-bold uppercase tracking-wider text-vietnam-yellow bg-vietnam-red/20 px-3 py-1 rounded-full border border-vietnam-red/40">
-              Chiến Dịch Hồ Chí Minh 1975
+        <div className="bg-[#141f16]/95 border-2 border-[#2b422e] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+          <div className="text-center space-y-3 border-b border-[#233526] pb-6">
+            <span className="military-stamp px-3 py-1 text-xs">
+              LỆNH ĐỘNG VIÊN XUẤT KÍCH
             </span>
-            <h1 className="text-2xl md:text-3xl font-black text-white">
-              Ghi Danh Xuất Kích - Chọn Cánh Quân Của Bạn
+            <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wide">
+              Ghi Danh Chiến Sĩ • Chọn Cánh Quân Giải Phóng
             </h1>
-            <p className="text-xs md:text-sm text-slate-300">
-              Chọn đúng Nhóm học tập của bạn trong lớp và nhập họ tên để cùng toàn đội đẩy xe tăng tiến về Dinh Độc Lập!
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
+              Chọn đúng Nhóm thi đua của bạn trong lớp và nhập thông tin để cùng đồng đội giải phóng miền Nam!
             </p>
           </div>
 
           <form onSubmit={handleJoinBattle} className="space-y-6">
-            {/* Lựa chọn 6 Cánh quân theo đúng đề bài */}
+            {/* Lựa chọn 6 Cánh quân */}
             <div className="space-y-3">
-              <label className="block text-sm font-bold text-slate-200">
-                1. Chọn Cánh Quân / Nhóm Thi Đua Của Bạn:
+              <label className="block text-xs font-black uppercase tracking-wider text-amber-300">
+                1. Chọn Cánh Quân Bạn Thuộc Về:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {INITIAL_TEAMS_CONFIG.map((team) => {
@@ -235,19 +230,19 @@ export const PlayPage: React.FC = () => {
                       type="button"
                       key={team.id}
                       onClick={() => setSelectedTeamId(team.id)}
-                      className={`text-left p-4 rounded-xl border transition-all relative overflow-hidden ${
+                      className={`text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
                         isSelected
-                          ? 'bg-military-card border-vietnam-yellow ring-2 ring-vietnam-yellow/50 shadow-xl'
-                          : 'bg-military-dark/80 border-military-border hover:border-slate-600'
+                          ? 'bg-[#1b2b1d] border-amber-400 shadow-xl shadow-amber-950/50 scale-[1.02]'
+                          : 'bg-[#0d160e] border-[#233526] hover:border-slate-500'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-black text-white text-base">{team.name}</span>
-                        {isSelected && <CheckCircle className="w-5 h-5 text-vietnam-yellow" />}
+                        {isSelected && <CheckCircle className="w-5 h-5 text-amber-400" />}
                       </div>
                       <p className="text-xs font-bold text-slate-200 mt-1">{team.corpsName}</p>
                       <span 
-                        className="inline-block text-[10px] font-bold mt-2 px-2 py-0.5 rounded"
+                        className="inline-block text-[10px] font-black mt-2 px-2 py-0.5 rounded uppercase"
                         style={{ backgroundColor: `${team.color}25`, color: team.color }}
                       >
                         {team.axisName}
@@ -261,24 +256,24 @@ export const PlayPage: React.FC = () => {
             {/* Nhập Tên và MSSV */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Họ và Tên Chiến Sĩ: <span className="text-vietnam-red">*</span>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-200">
+                  Họ và Tên Chiến Sĩ: <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <User className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type="text"
                     required
                     placeholder="VD: Nguyễn Văn Toàn"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
-                    className="w-full bg-military-dark border border-military-border rounded-xl pl-9 pr-4 py-2.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-vietnam-yellow focus:ring-1 focus:ring-vietnam-yellow"
+                    className="w-full bg-[#0d160e] border border-[#2b422e] rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-medium"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-200">
                   Mã Số Sinh Viên (MSSV):
                 </label>
                 <input
@@ -286,139 +281,139 @@ export const PlayPage: React.FC = () => {
                   placeholder="VD: SE186934 (Tùy chọn)"
                   value={studentCode}
                   onChange={(e) => setStudentCode(e.target.value)}
-                  className="w-full bg-military-dark border border-military-border rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-vietnam-yellow focus:ring-1 focus:ring-vietnam-yellow"
+                  className="w-full bg-[#0d160e] border border-[#2b422e] rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-medium"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-vietnam-red to-red-700 hover:from-red-600 hover:to-red-800 text-white font-extrabold text-base tracking-wide uppercase shadow-lg shadow-red-900/40 hover:shadow-red-800/60 transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-red-600 via-red-700 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-black text-base uppercase tracking-wider shadow-xl shadow-red-950/60 transition-all flex items-center justify-center gap-2.5"
             >
-              <Sparkles className="w-5 h-5 text-vietnam-yellow" />
-              Sẵn Sàng Xuất Kích Cùng {INITIAL_TEAMS_CONFIG.find((t) => t.id === selectedTeamId)?.name}
+              <span>★</span> Sẵn Sàng Xuất Kích Cùng {INITIAL_TEAMS_CONFIG.find((t) => t.id === selectedTeamId)?.name}
             </button>
           </form>
         </div>
       ) : (
         /* ===================================================
-           MÀN HÌNH TÁC CHIẾN (CHIẾN SĨ THI ĐẤU)
+           MÀN HÌNH TÁC CHIẾN CHIẾN HÀO
            =================================================== */
         <div className="space-y-6">
-          {/* Cảnh báo khi đội nhà bị dính hiệu ứng Debuff từ đối phương */}
+          {/* Cảnh báo khi bị đối phương tấn công */}
           {isDeceptionActive && (
-            <div className="p-3.5 rounded-xl bg-red-950/80 border-2 border-red-500 text-red-200 text-xs flex items-center gap-2 animate-bounce shadow-lg">
+            <div className="p-4 rounded-2xl bg-red-950/90 border-2 border-red-500 text-red-200 text-xs flex items-center gap-3 shadow-xl animate-bounce">
               <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
               <div>
-                <strong>CẢNH BÁO TÁC CHIẾN:</strong> Đội bạn đang dính hiệu ứng <strong>Nghi binh Pleiku</strong>! Các phương án câu hỏi đang bị rung nhiễu!
+                <strong className="text-amber-300 font-black">CẢNH BÁO TÁC CHIẾN:</strong> Đội bạn đang dính kế sách <strong>Nghi binh Pleiku</strong>! Các phương án câu hỏi đang bị rung nhiễu!
               </div>
             </div>
           )}
 
           {isRouteBlockActive && (
-            <div className="p-3 rounded-xl bg-amber-950/80 border border-amber-500 text-amber-200 text-xs flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <span>Đội bạn đang bị đối phương lập rào cản <strong>Chặn đường số 7</strong> (tốc độ tiến quân giảm 50%)!</span>
+            <div className="p-3.5 rounded-2xl bg-amber-950/90 border border-amber-500 text-amber-200 text-xs flex items-center gap-2.5 shadow-lg">
+              <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+              <span>Đối phương đang lập rào cản <strong>Chặn đường số 7</strong>! Tốc độ tiến quân của đội bạn bị giảm 50%!</span>
             </div>
           )}
 
-          {/* Thanh Tiến Độ Xe Tăng Đội Nhà & Chỉ Số Cá Nhân */}
-          <div className="bg-military-surface/90 border border-military-border rounded-2xl p-5 space-y-4 shadow-xl">
+          {/* Bảng Chỉ Huy Cá Nhân & Tiến Độ Xe Tăng Đội Nhà */}
+          <div className="bg-[#141f16]/95 border-2 border-[#2b422e] rounded-3xl p-5 space-y-4 shadow-xl">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3.5">
                 <div 
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-sm border shadow"
-                  style={{ backgroundColor: `${currentTeam?.color}30`, borderColor: currentTeam?.color }}
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-base border-2 shadow-lg"
+                  style={{ backgroundColor: `${currentTeam?.color}35`, borderColor: currentTeam?.color }}
                 >
                   {currentTeam?.name.replace('Nhóm ', 'N')}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-white text-base flex items-center gap-2">
+                  <h3 className="font-black text-white text-base flex items-center gap-2">
                     {currentPlayer?.name}
                     <span className="text-xs font-normal text-slate-400">({currentTeam?.corpsName})</span>
                   </h3>
-                  <span className="text-xs text-vietnam-yellow font-medium">
-                    {currentTeam?.axisName}
+                  <span className="text-xs text-amber-300 font-bold">
+                    {currentTeam?.axisName} • Xe tăng {currentTeam?.tankNumber}
                   </span>
                 </div>
               </div>
 
-              {/* Bảng chỉ số cá nhân */}
+              {/* Huy hiệu điểm & chuỗi đúng */}
               <div className="flex items-center gap-3 text-center">
-                <div className="px-3 py-1.5 rounded-xl bg-military-dark border border-military-border">
-                  <span className="text-[10px] text-slate-400 uppercase block font-bold">Điểm</span>
-                  <span className="text-lg font-black text-vietnam-yellow">{currentPlayer?.score || 0}</span>
+                <div className="px-3.5 py-1.5 rounded-xl bg-[#0d160e] border border-[#233526]">
+                  <span className="text-[10px] text-slate-400 uppercase block font-black">Điểm Số</span>
+                  <span className="text-lg font-black text-amber-300">{currentPlayer?.score || 0}</span>
                 </div>
 
-                <div className="px-3 py-1.5 rounded-xl bg-military-dark border border-military-border">
-                  <span className="text-[10px] text-slate-400 uppercase block font-bold flex items-center justify-center gap-0.5">
-                    <Flame className="w-3 h-3 text-orange-400 fill-orange-400" /> Streak
+                <div className="px-3.5 py-1.5 rounded-xl bg-[#0d160e] border border-[#233526]">
+                  <span className="text-[10px] text-slate-400 uppercase block font-black flex items-center justify-center gap-1 text-orange-400">
+                    <Flame className="w-3 h-3 fill-orange-400" /> Streak
                   </span>
                   <span className="text-lg font-black text-orange-400">{currentPlayer?.currentStreak || 0}</span>
                 </div>
 
-                <div className="px-3 py-1.5 rounded-xl bg-military-dark border border-military-border">
-                  <span className="text-[10px] text-slate-400 uppercase block font-bold">Kỷ lục</span>
+                <div className="px-3.5 py-1.5 rounded-xl bg-[#0d160e] border border-[#233526]">
+                  <span className="text-[10px] text-slate-400 uppercase block font-black">Kỷ Lục</span>
                   <span className="text-lg font-black text-emerald-400">{currentPlayer?.maxStreak || 0}</span>
                 </div>
               </div>
             </div>
 
-            {/* Thanh tiến độ xe tăng đội nhà */}
-            <div className="space-y-1.5 pt-2 border-t border-military-border/60">
+            {/* Thanh tiến độ xe tăng */}
+            <div className="space-y-1.5 pt-2 border-t border-[#233526]">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                  🚜 Tiến độ Cánh quân ({currentTeam?.name}):
+                <span className="font-black text-slate-200 uppercase tracking-wide flex items-center gap-1.5">
+                  🚜 Tiến Độ Tiến Về Dinh Độc Lập ({currentTeam?.name}):
                 </span>
-                <span className="font-black text-vietnam-yellow text-sm">
+                <span className="font-black text-amber-300 text-sm">
                   {currentTeam?.progress || 0}%
                 </span>
               </div>
 
-              <div className="relative w-full h-4 bg-military-dark rounded-full overflow-hidden border border-slate-700/80">
+              <div className="relative w-full h-4 bg-[#090f0a] rounded-full overflow-hidden border border-[#233526]">
                 <div
-                  className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-red-600 via-amber-500 to-yellow-400"
+                  className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-red-600 via-amber-500 to-yellow-300 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
                   style={{ width: `${currentTeam?.progress || 0}%` }}
                 />
               </div>
             </div>
           </div>
 
-          {/* MÀN HÌNH CÂU HỎI TRẮC NGHIỆM */}
+          {/* ===================================================
+              KHU VỰC CÂU HỎI TRẮC NGHIỆM
+              =================================================== */}
           {currentQ ? (
-            <div className="bg-military-surface/90 border border-military-border rounded-2xl p-6 md:p-8 space-y-6 shadow-2xl relative">
-              {/* Huy hiệu Mệnh lệnh thần tốc x2 nếu đang kích hoạt */}
+            <div className="bg-[#141f16]/95 border-2 border-[#2b422e] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
               {currentPlayer?.isSpeedBoostActive && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-xs font-black animate-pulse">
-                  <Zap className="w-4 h-4 text-yellow-400" /> Đang kích hoạt [Mệnh lệnh Thần tốc: x2 Điểm & Tiến độ]!
+                  <span>⚡</span> Đang kích hoạt [Mệnh lệnh Thần tốc: x2 Điểm & Sức đẩy ở câu này]!
                 </div>
               )}
 
-              <div className="flex items-center justify-between border-b border-military-border pb-3 text-xs text-slate-400">
-                <span className="font-extrabold uppercase px-2.5 py-1 rounded bg-vietnam-red/20 text-vietnam-yellow border border-vietnam-red/40">
+              <div className="flex items-center justify-between border-b border-[#233526] pb-3 text-xs text-slate-400">
+                <span className="font-black uppercase px-3 py-1 rounded-md bg-red-950/90 text-amber-300 border border-red-800">
                   Câu hỏi #{currentQ.id}
                 </span>
-                <span>Chủ đề 6: Đại thắng Mùa Xuân 1975</span>
+                <span className="font-bold text-amber-200/80">Chủ đề 6 • Kháng chiến chống Mỹ 1973 - 1975</span>
               </div>
 
-              <h2 className="text-base md:text-lg font-bold text-white leading-relaxed">
+              <h2 className="text-base sm:text-lg font-bold text-white leading-relaxed">
                 {currentQ.text}
               </h2>
 
-              {/* 4 Nút Lựa chọn A, B, C, D (Có hiệu ứng rung nếu dính Nghi binh Pleiku) */}
-              <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${isDeceptionActive ? 'animate-[bounce_0.6s_infinite]' : ''}`}>
+              {/* 4 Nút Lựa Chọn A, B, C, D (Hiệu ứng rung nếu dính Nghi binh) */}
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-3.5 ${isDeceptionActive ? 'shake-active' : ''}`}>
                 {(['A', 'B', 'C', 'D'] as const).map((key) => {
                   const isSelected = selectedAnswer === key;
                   const isCorrect = currentQ.correctAnswer === key;
 
-                  let style = 'bg-military-dark/80 border-military-border text-slate-200 hover:border-vietnam-yellow/70 hover:bg-military-card';
+                  let style = 'bg-[#0d160e] border-[#233526] text-slate-200 hover:border-amber-400/80 hover:bg-[#1a281c]';
                   if (hasAnswered) {
                     if (isCorrect) {
-                      style = 'bg-emerald-950/80 border-emerald-500 text-emerald-200 font-bold';
+                      style = 'bg-emerald-950/90 border-emerald-500 text-emerald-200 font-bold shadow-lg shadow-emerald-950/60';
                     } else if (isSelected) {
-                      style = 'bg-red-950/80 border-red-500 text-red-200 font-bold';
+                      style = 'bg-red-950/90 border-red-500 text-red-200 font-bold';
                     } else {
-                      style = 'opacity-40 bg-military-dark/40 border-slate-800 text-slate-400';
+                      style = 'opacity-30 bg-[#0a100b] border-slate-900 text-slate-500';
                     }
                   }
 
@@ -427,33 +422,33 @@ export const PlayPage: React.FC = () => {
                       key={key}
                       onClick={() => handleSelectOption(key)}
                       disabled={hasAnswered}
-                      className={`text-left p-4 rounded-xl border transition-all flex items-start gap-3 ${style}`}
+                      className={`text-left p-4 rounded-2xl border-2 transition-all flex items-start gap-3.5 ${style}`}
                     >
                       <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0 ${
                         hasAnswered && isCorrect
                           ? 'bg-emerald-600 text-white'
                           : isSelected
-                            ? 'bg-vietnam-red text-white'
-                            : 'bg-slate-800 text-slate-300'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-[#1b2b1d] text-amber-300 border border-[#2b422e]'
                       }`}>
                         {key}
                       </span>
-                      <span className="text-sm leading-snug flex-1">{currentQ.options[key]}</span>
+                      <span className="text-sm leading-snug flex-1 font-medium">{currentQ.options[key]}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Hộp thoại Giải thích Lịch sử sau khi trả lời */}
+              {/* Hộp Thoại Báo Cáo Chiến Trường & Giải Thích Lịch Sử */}
               {hasAnswered && (
                 <div className="space-y-4 pt-2">
-                  <div className={`p-4 rounded-xl border text-sm space-y-2 ${
+                  <div className={`p-4 rounded-2xl border-2 text-sm space-y-2.5 ${
                     selectedAnswer === currentQ.correctAnswer
-                      ? 'bg-emerald-950/60 border-emerald-700 text-emerald-200'
-                      : 'bg-red-950/60 border-red-700 text-red-200'
+                      ? 'bg-emerald-950/70 border-emerald-600 text-emerald-200'
+                      : 'bg-red-950/70 border-red-600 text-red-200'
                   }`}>
                     <div className="flex items-center justify-between">
-                      <span className="font-extrabold flex items-center gap-2 text-base">
+                      <span className="font-black flex items-center gap-2 text-base">
                         {selectedAnswer === currentQ.correctAnswer ? (
                           <>
                             <Check className="w-5 h-5 text-emerald-400" />
@@ -462,64 +457,64 @@ export const PlayPage: React.FC = () => {
                         ) : (
                           <>
                             <X className="w-5 h-5 text-red-400" />
-                            CHƯA CHÍNH XÁC! Chuỗi đúng trở về 0.
+                            CHƯA CHÍNH XÁC! Chuỗi Streak trở về 0.
                           </>
                         )}
                       </span>
 
                       {explanationCountdown !== null && (
-                        <span className="text-xs bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-700 font-semibold text-slate-300">
+                        <span className="text-xs bg-black/60 px-2.5 py-1 rounded-full border border-slate-700 font-bold text-amber-300">
                           Tự chuyển sau {explanationCountdown}s...
                         </span>
                       )}
                     </div>
 
                     {currentQ.explanation && (
-                      <p className="text-xs text-slate-300 border-t border-slate-700/80 pt-2 leading-relaxed">
-                        <strong className="text-vietnam-yellow">💡 Ý nghĩa lịch sử:</strong> {currentQ.explanation}
+                      <p className="text-xs text-slate-300 border-t border-slate-700/60 pt-2 leading-relaxed">
+                        <strong className="text-amber-300 font-bold">💡 Ý nghĩa lịch sử:</strong> {currentQ.explanation}
                       </p>
                     )}
                   </div>
 
                   <button
                     onClick={handleNextQuestion}
-                    className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider transition-colors border border-slate-700"
+                    className="w-full py-3 rounded-xl bg-[#1b2b1d] hover:bg-[#253a28] text-amber-300 font-bold text-xs uppercase tracking-wider transition-colors border border-amber-400/40"
                   >
-                    Chuyển Câu Tiếp Theo Ngay Lập Tức →
+                    Chuyển Câu Tiếp Theo Ngay →
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <div className="p-12 text-center text-slate-400 bg-military-surface/90 border border-military-border rounded-2xl">
-              Đang chờ Chỉ Huy Sở phát lệnh câu hỏi...
+            <div className="p-12 text-center text-slate-300 bg-[#141f16] border border-[#2b422e] rounded-3xl">
+              Đang chờ Chỉ Huy Sở phát lệnh câu hỏi tiếp theo...
             </div>
           )}
 
           {/* ===================================================
-              KHO VẬT PHẨM CHIẾN THUẬT (BOOST ITEMS TRAY)
+              KHO LỆNH BÀI CHIẾN THUẬT (TACTICAL BOOST ITEMS)
               =================================================== */}
-          <div className="bg-military-surface/90 border border-military-border rounded-2xl p-5 space-y-3 shadow-xl">
-            <div className="flex items-center justify-between border-b border-military-border pb-2.5">
-              <span className="text-xs font-black uppercase tracking-wider text-vietnam-yellow flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-vietnam-gold" /> Kho Quân Tư Trang Chiến Thuật ({currentPlayer?.inventory.length || 0})
+          <div className="bg-[#141f16]/95 border-2 border-[#2b422e] rounded-3xl p-5 space-y-3 shadow-xl">
+            <div className="flex items-center justify-between border-b border-[#233526] pb-3">
+              <span className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-amber-400" /> Kho Lệnh Bài Chiến Thuật ({currentPlayer?.inventory.length || 0})
               </span>
               <span className="text-[11px] text-slate-400">
-                (Đạt mỗi chuỗi Streak 3, 6, 9... để nhận thêm vật phẩm)
+                (Đạt mỗi Streak 3, 6, 9... để nhận thêm Lệnh bài)
               </span>
             </div>
 
             {currentPlayer && currentPlayer.inventory.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {currentPlayer.inventory.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => handleUseItem(item)}
-                    className="text-left p-3 rounded-xl bg-military-dark border border-military-border hover:border-vietnam-yellow/80 hover:bg-military-card transition-all flex flex-col justify-between group shadow"
+                    className="text-left p-3.5 rounded-2xl bg-[#0d160e] border border-[#233526] hover:border-amber-400 hover:bg-[#1a281c] transition-all flex flex-col justify-between group shadow"
                   >
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-white group-hover:text-vietnam-yellow flex items-center gap-1.5">
+                        <span className="font-black text-xs text-white group-hover:text-amber-300 flex items-center gap-1.5">
                           {item.type === 'SPEED_ORDER' && '⚡'}
                           {item.type === 'TRUONG_SON_PIPE' && '⛽'}
                           {item.type === 'DAVIS_SHIELD' && '🛡️'}
@@ -527,36 +522,36 @@ export const PlayPage: React.FC = () => {
                           {item.type === 'ROUTE_7_BLOCK' && '🚧'}
                           {item.name}
                         </span>
-                        <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
-                          Sẵn sàng
+                        <span className="text-[9px] uppercase font-black text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
+                          SẴN SÀNG
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-400 mt-1">{item.description}</p>
                     </div>
 
-                    <span className="text-[10px] text-vietnam-yellow font-bold mt-2 pt-1 border-t border-slate-800 block text-right">
-                      Nhấn để kích hoạt ngay →
+                    <span className="text-[10px] text-amber-400 font-bold mt-2 pt-1.5 border-t border-[#1e2e21] block text-right">
+                      Nhấn để tung chiêu thức →
                     </span>
                   </button>
                 ))}
               </div>
             ) : (
               <p className="text-xs text-slate-400 italic py-2 text-center">
-                Túi đồ hiện đang trống. Hãy trả lời đúng liên tiếp 3 câu (Streak 3) để được Chỉ Huy Sở cấp phát vật phẩm!
+                Túi đồ hiện đang trống. Hãy trả lời đúng liên tiếp 3 câu (Streak 3) để được Chỉ Huy Sở trao tặng Lệnh bài!
               </p>
             )}
           </div>
         </div>
       )}
 
-      {/* MODAL CHỌN ĐỘI ĐỐI THỦ KHI DÙNG CHẶN ĐƯỜNG SỐ 7 */}
+      {/* MODAL CHỌN ĐỘI ĐỐI THỦ ĐỂ CHẶN ĐƯỜNG SỐ 7 */}
       {targetSelectModalItem && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-military-surface border border-military-border rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-military-border pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Target className="w-5 h-5 text-red-400" />
-                Chọn Đội Đối Thủ Để Chặn Đường Số 7
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#141f16] border-2 border-red-600 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#233526] pb-3">
+              <h3 className="font-black text-white text-base flex items-center gap-2">
+                <Target className="w-5 h-5 text-red-500" />
+                Chọn Cánh Quân Để Chặn Đường Số 7
               </h3>
               <button
                 onClick={() => setTargetSelectModalItem(null)}
@@ -567,23 +562,23 @@ export const PlayPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-300">
-              Chọn cánh quân bạn muốn giăng rào cản làm chậm 50% tốc độ tiến quân trong 8 giây:
+              Chọn cánh quân đối thủ bạn muốn giăng rào cản làm chậm 50% tốc độ tiến quân trong 8 giây:
             </p>
 
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-1 gap-2.5">
               {gameState.teams
                 .filter((t) => t.id !== currentPlayer?.teamId)
                 .map((target) => (
                   <button
                     key={target.id}
                     onClick={() => handleConfirmRouteBlock(target.id)}
-                    className="p-3 rounded-xl bg-military-dark border border-military-border hover:border-red-500 text-left flex items-center justify-between transition-all"
+                    className="p-3.5 rounded-xl bg-[#0d160e] border border-[#233526] hover:border-red-500 text-left flex items-center justify-between transition-all"
                   >
                     <div>
-                      <span className="font-extrabold text-white text-sm">{target.name}</span>
+                      <span className="font-black text-white text-sm">{target.name}</span>
                       <p className="text-xs text-slate-400">{target.corpsName}</p>
                     </div>
-                    <span className="text-xs font-bold text-vietnam-yellow">
+                    <span className="text-xs font-black text-amber-300">
                       {target.progress}%
                     </span>
                   </button>
