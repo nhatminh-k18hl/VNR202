@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -36,6 +36,25 @@ function shuffleArray<T>(items: T[]): T[] {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+/**
+ * Tạo một vòng chơi mới gồm đầy đủ tất cả câu hỏi, được xáo trộn ngẫu nhiên.
+ * Đảm bảo:
+ * 1. Phải đi hết 1 vòng (toàn bộ N câu) thì mới lặp lại vòng tiếp theo.
+ * 2. Tránh 2 câu giống hệt nhau đứng cạnh nhau (khi nối vòng mới, câu đầu tiên của vòng mới
+ *    không được trùng với câu cuối cùng của vòng trước đó).
+ */
+function generateNextRound(allQuestions: Question[], previousLastId?: string | number): Question[] {
+  if (allQuestions.length === 0) return [];
+  const shuffled = shuffleArray(allQuestions);
+  if (shuffled.length > 1 && previousLastId !== undefined && shuffled[0].id === previousLastId) {
+    const swapIdx = Math.floor(Math.random() * (shuffled.length - 1)) + 1;
+    const temp = shuffled[0];
+    shuffled[0] = shuffled[swapIdx];
+    shuffled[swapIdx] = temp;
+  }
+  return shuffled;
 }
 
 export const PlayPage: React.FC = () => {
@@ -169,11 +188,11 @@ export const PlayPage: React.FC = () => {
     }
   }, [rawQuestions.length]);
 
-  // 5. Khởi tạo & Shuffle bộ câu hỏi riêng cho người chơi này
+  // 5. Khởi tạo vòng câu hỏi đầu tiên cho người chơi (đầy đủ các câu, không lặp lại)
   useEffect(() => {
     if (rawQuestions.length > 0 && playerDeck.length === 0) {
-      const shuffled = shuffleArray(rawQuestions);
-      setPlayerDeck(shuffled);
+      const initialDeck = generateNextRound(rawQuestions);
+      setPlayerDeck(initialDeck);
       setDeckIndex(0);
     }
   }, [rawQuestions, playerDeck.length]);
@@ -235,6 +254,18 @@ export const PlayPage: React.FC = () => {
   // Câu hỏi hiện tại lấy từ deck đã xáo trộn
   const currentQ: Question | undefined = playerDeck[deckIndex];
 
+  // Xáo trộn ngẫu nhiên thứ tự 4 đáp án cho từng câu hỏi để chống spam phím/nút (tránh spam full C)
+  // Giữ cố định thứ tự trong suốt thời gian hiển thị câu hỏi đó
+  const currentOptions = useMemo(() => {
+    if (!currentQ) return [];
+    const keys: AnswerKey[] = ['A', 'B', 'C', 'D'];
+    const opts = keys.map((key) => ({
+      key,
+      text: currentQ.options[key] || '',
+    }));
+    return shuffleArray(opts);
+  }, [currentQ?.id, deckIndex]);
+
   // 8. Đếm ngược 18s cho mỗi câu hỏi khi phòng ở phase BATTLE
   useEffect(() => {
     if (!isJoined || hasAnswered || gameState.roomState.phase !== 'BATTLE' || !currentQ) {
@@ -292,10 +323,10 @@ export const PlayPage: React.FC = () => {
       teamId: selectedTeamId,
     });
 
-    // Nếu vào trận khi trận đấu đã bắt đầu, chuẩn bị deck ngay để vào chiến trường lập tức
+    // Nếu vào trận khi trận đấu đã bắt đầu, chuẩn bị vòng câu hỏi đầu tiên lập tức
     if (playerDeck.length === 0 && rawQuestions.length > 0) {
-      const shuffled = shuffleArray(rawQuestions);
-      setPlayerDeck(shuffled);
+      const initialDeck = generateNextRound(rawQuestions);
+      setPlayerDeck(initialDeck);
       setDeckIndex(0);
     }
 
@@ -372,7 +403,7 @@ export const PlayPage: React.FC = () => {
 
   // =========================================================================
   // XỬ LÝ CHUYỂN CÂU HỎI TIẾP THEO (ĐẢM BẢO CHƠI LIÊN TỤC KHÔNG BAO GIỜ HẾT CÂU)
-  // Khi trả lời hết ngân hàng câu hỏi, tự động xáo trộn và nối tiếp vòng mới
+  // Đi hết 1 vòng trọn vẹn mới sang vòng tiếp theo, tránh 2 câu giống hệt đứng cạnh nhau
   // =========================================================================
   const handleNextQuestion = useCallback(() => {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
@@ -382,16 +413,18 @@ export const PlayPage: React.FC = () => {
 
     const nextIndex = deckIndex + 1;
 
-    // Nếu sắp hết hoặc đã hết câu hỏi trong deck cá nhân, tự động bổ sung đợt shuffle mới
+    // Nếu chuẩn bị vượt quá số câu hiện có (đã đi hết 1 vòng), tạo thêm 1 vòng mới hoàn chỉnh
+    // Đảm bảo câu đầu tiên của vòng mới không trùng với câu cuối của vòng trước
     if (nextIndex >= playerDeck.length) {
       if (rawQuestions.length > 0) {
-        const freshDeck = shuffleArray(rawQuestions);
-        setPlayerDeck((prev) => [...prev, ...freshDeck]);
+        const lastQ = playerDeck[playerDeck.length - 1];
+        const nextRound = generateNextRound(rawQuestions, lastQ?.id);
+        setPlayerDeck((prev) => [...prev, ...nextRound]);
       }
     }
 
     setDeckIndex(nextIndex);
-  }, [deckIndex, playerDeck.length, rawQuestions]);
+  }, [deckIndex, playerDeck, rawQuestions]);
 
   // Sử dụng vật phẩm từ túi đồ
   const handleUseItem = (item: BoostItem) => {
@@ -1020,13 +1053,15 @@ export const PlayPage: React.FC = () => {
           <div className={`p-4 sm:p-6 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-lg space-y-4 transition-all ${
             currentPlayer?.isShellShocked ? 'shell-shocked' : ''
           }`}>
-            {/* Header câu hỏi: Số thứ tự + Thanh đếm ngược 18s */}
+            {/* Header câu hỏi: Bỏ đánh số câu, chỉ hiện nhãn tác chiến + Thanh đếm ngược 18s */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-black uppercase text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
-                  <span>Câu #{deckIndex + 1}</span>
-                  <span className="text-[10px] text-stone-400 font-normal hidden sm:inline">(Đã xáo trộn riêng)</span>
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-black uppercase text-stone-500 dark:text-stone-400 text-xs tracking-wider">
+                    Câu Hỏi Tác Chiến
+                  </span>
+                </div>
 
                 <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 font-mono font-black text-xs">
                   <Clock className="w-3.5 h-3.5" />
@@ -1056,18 +1091,18 @@ export const PlayPage: React.FC = () => {
                   {currentQ.text}
                 </h3>
 
-                {/* 4 Nút Lựa Chọn Đáp Án (Chỉ hiển thị đáp án, bỏ chữ cái A, B, C, D) */}
+                {/* 4 Nút Lựa Chọn Đáp Án (Đã xáo trộn ngẫu nhiên thứ tự đáp án, chỉ hiển thị nội dung) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs sm:text-sm">
-                  {(['A', 'B', 'C', 'D'] as AnswerKey[]).map((key) => {
-                    const isEliminated = currentPlayer?.eliminatedOptions?.includes(key);
-                    const isCorrect = currentQ.correctAnswer === key;
-                    const isSelected = selectedAnswer === key;
+                  {currentOptions.map((opt) => {
+                    const isEliminated = currentPlayer?.eliminatedOptions?.includes(opt.key);
+                    const isCorrect = currentQ.correctAnswer === opt.key;
+                    const isSelected = selectedAnswer === opt.key;
 
                     return (
                       <button
-                        key={key}
+                        key={opt.key}
                         disabled={hasAnswered || isEliminated}
-                        onClick={() => handleSelectOption(key)}
+                        onClick={() => handleSelectOption(opt.key)}
                         className={`min-h-[54px] sm:min-h-[58px] p-3.5 sm:p-4 rounded-2xl border text-left font-semibold transition-all relative flex items-center justify-between group cursor-pointer active:scale-[0.98] select-none ${
                           isEliminated
                             ? 'opacity-30 line-through bg-stone-100 dark:bg-stone-800 text-stone-400 cursor-not-allowed'
@@ -1081,7 +1116,7 @@ export const PlayPage: React.FC = () => {
                         }`}
                       >
                         <span className="leading-snug text-xs sm:text-sm font-medium">
-                          {currentQ.options[key]}
+                          {opt.text}
                         </span>
 
                         {hasAnswered && (
