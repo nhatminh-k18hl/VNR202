@@ -1013,27 +1013,32 @@ export const PlayPage: React.FC = () => {
                   <Package className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-bounce" />
                   Hộp Quà Tiếp Tế
                 </span>
-                <span className="text-[11px] text-stone-500">
-                  Tối đa 1 món/loại
+                <span className="text-[11px] text-stone-500 font-medium">
+                  Mỗi người tối đa 1 món
                 </span>
               </div>
 
-              {/* Grid hộp quà tiếp tế: Click trực tiếp vào hộp quà */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Hộp quà tiếp tế: Click trực tiếp vào hộp quà để nhận */}
+              <div className="grid grid-cols-1 gap-2">
                 {gameState.supplyDraftPool.map((draft) => (
                   <button
                     key={draft.id}
                     onClick={() => handleClaimDraftBox(draft.id)}
-                    className="p-3 rounded-2xl bg-white dark:bg-[#111813] border border-amber-300 dark:border-amber-800 hover:border-amber-500 text-left flex items-center gap-3 active:scale-[0.98] transition-all cursor-pointer shadow-sm group"
+                    className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#111813] border border-amber-300 dark:border-amber-800 hover:border-amber-500 text-left flex items-center gap-3 active:scale-[0.98] transition-all cursor-pointer shadow-sm group"
                     title="Bấm vào hộp quà để nhận"
                   >
                     <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform">
                       {draft.item.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white block truncate group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                        {draft.item.name}
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white block truncate group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                          {draft.item.name}
+                        </span>
+                        <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800">
+                          Chạm để nhận
+                        </span>
+                      </div>
                       <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1 mt-0.5">
                         {draft.item.description}
                       </p>
@@ -1171,15 +1176,15 @@ export const PlayPage: React.FC = () => {
           <div className="p-3.5 sm:p-5 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-sm space-y-2.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-black uppercase text-stone-900 dark:text-white flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-amber-500" /> Túi Đồ Tác Chiến ({currentPlayer?.inventory.length || 0})
+                <Shield className="w-4 h-4 text-amber-500" /> Túi Đồ Tác Chiến ({currentPlayer?.inventory.length || 0}/1)
               </span>
               <span className="text-[11px] text-stone-400">
-                Chạm để dùng ngay
+                {currentPlayer?.inventory && currentPlayer.inventory.length > 0 ? 'Chạm để dùng ngay' : 'Tối đa 1 món'}
               </span>
             </div>
 
             {currentPlayer && currentPlayer.inventory.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {currentPlayer.inventory.map((item) => (
                   <button
                     key={item.id}
@@ -1202,7 +1207,7 @@ export const PlayPage: React.FC = () => {
               </div>
             ) : (
               <p className="text-xs text-stone-400 text-center py-2 italic">
-                Túi đồ trống. Trả lời đúng liên tiếp hoặc bấm Hộp quà tiếp tế để nhận khiên bảo vệ!
+                Túi đồ trống. Trả lời đúng liên tiếp hoặc chạm Hộp quà tiếp tế để nhận vật phẩm (tối đa 1 món)!
               </p>
             )}
           </div>

@@ -686,6 +686,15 @@ class GameSyncService {
         }
       });
 
+      // 5. Tự động thu hồi hòm tiếp tế hết hạn (nếu không ai dùng thì thính trống)
+      if (this.state.supplyDraftPool && this.state.supplyDraftPool.length > 0) {
+        const remainingDrafts = this.state.supplyDraftPool.filter((d) => d.expiresAt > now);
+        if (remainingDrafts.length !== this.state.supplyDraftPool.length) {
+          this.state.supplyDraftPool = remainingDrafts;
+          hasChanged = true;
+        }
+      }
+
       if (hasChanged) {
         this.saveAndBroadcast();
       }
@@ -805,26 +814,24 @@ class GameSyncService {
       });
     }
 
-    const dropped: SupplyDraftItem[] = [];
-    for (let i = 0; i < 2; i++) {
-      const template = availableItems[Math.floor(Math.random() * availableItems.length)];
-      dropped.push({
-        id: 'draft_' + Date.now() + '_' + i,
-        item: {
-          ...template,
-          id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-          acquiredAt: Date.now(),
-        },
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 25000,
-      });
-    }
+    // Mỗi đợt tiếp tế chỉ thả đúng 1 hòm duy nhất (1 thính chỉ có 1 đồ loại đó, tránh đầy slot)
+    const template = availableItems[Math.floor(Math.random() * availableItems.length)];
+    const singleDraft: SupplyDraftItem = {
+      id: 'draft_' + Date.now(),
+      item: {
+        ...template,
+        id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        acquiredAt: Date.now(),
+      },
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 20000, // 20 giây nếu không ai nhặt thì thính tự động trống
+    };
 
-    this.state.supplyDraftPool = dropped;
+    this.state.supplyDraftPool = [singleDraft];
     soundService.playSupplyDrop();
 
     this.addLiveEvent(
-      '📦 [HÒM TIẾP TẾ ĐÃ RƠI] Hộp đồ đã rơi xuống sa bàn! Click nhanh vào hộp để nhận quà!',
+      `📦 [HÒM TIẾP TẾ ĐÃ RƠI] 1 hòm [${template.name}] đã rơi xuống sa bàn! Click nhanh vào hộp để nhận!`,
       'info'
     );
 
@@ -866,6 +873,14 @@ class GameSyncService {
     const player = this.state.players.find((p) => p.id === playerId);
     if (!player) {
       return { success: false, message: 'Không tìm thấy thông tin thành viên!' };
+    }
+
+    // 1 người chơi chỉ được giữ tối đa 1 vật phẩm trong túi đồ, không thể nhặt 2 đồ cùng lúc
+    if (player.inventory.length >= 1) {
+      return {
+        success: false,
+        message: 'Bạn đang có vật phẩm trong túi đồ! Hãy sử dụng trước khi nhận thêm!',
+      };
     }
 
     const draftItem = this.state.supplyDraftPool[draftIndex];
@@ -999,6 +1014,9 @@ class GameSyncService {
   }
 
   private rollItemForPlayer(player: PlayerState): BoostItem | undefined {
+    // 1 người chơi chỉ được giữ tối đa 1 vật phẩm trong túi đồ, không thể roll ra 2 đồ cùng lúc
+    if (player.inventory.length >= 1) return undefined;
+
     const candidateTypes: ItemType[] = ['DAVIS_SHIELD', 'TRUONG_SON_LOGISTICS', 'RAPID_DISPATCH', 'SMOKE_SCREEN'];
     const eligibleTypes = candidateTypes.filter((type) => !this.isItemTypeHeldByTeam(player.teamId, type));
     if (eligibleTypes.length === 0) return undefined;
