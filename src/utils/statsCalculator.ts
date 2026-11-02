@@ -50,15 +50,14 @@ export function getTopScorePlayers(players: PlayerState[], limit: number = 10): 
 
 /**
  * Xếp hạng 6 Đội đua theo quy tắc:
- * 1. Đội húc đổ cổng Dinh Độc Lập (tiến độ 100%) trước
- * 2. Điểm đội quyết định chiến thắng tổng quan
- * 3. Tiến độ xe tăng
+ * 1. Điểm đội quyết định chiến thắng tổng quan (cho phép các đội sau lật kèo)
+ * 2. Nếu bằng điểm nhau, đội nào có tiến độ cao hơn sẽ xếp trên
  */
 export function getTeamRankings(teams: TeamState[]): TeamState[] {
   return [...teams].sort((a, b) => {
-    if (a.progress >= 100 && b.progress < 100) return -1;
-    if (b.progress >= 100 && a.progress < 100) return 1;
+    // 1. Điểm đội quyết định chiến thắng tổng quan
     if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+    // 2. Nếu bằng điểm, xét tiến độ về đích
     return b.progress - a.progress;
   });
 }

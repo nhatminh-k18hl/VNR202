@@ -957,6 +957,7 @@ class GameSyncService {
       team.totalScore += points;
 
       const progressDelta = 2;
+      const prevProgress = team.progress;
       team.progress = Math.min(100, team.progress + progressDelta);
 
       if (player.currentStreak % 3 === 0) {
@@ -965,8 +966,15 @@ class GameSyncService {
 
       player.eliminatedOptions = undefined;
 
-      if (team.progress >= 100) {
-        this.triggerVictory(team.id, player.name);
+      // Khi xe tăng tiến tới cổng Dinh Độc Lập (tiến độ 100%), thông báo trên sa bàn nhưng KHÔNG kết thúc game!
+      // Trận đấu tiếp tục diễn ra đủ 5 phút để các đội đua điểm và có cơ hội lật kèo.
+      if (team.progress >= 100 && prevProgress < 100) {
+        this.addLiveEvent(
+          `🚩 Xe tăng của ${team.name} (${team.corpsName}) đã tiến vào Dinh Độc Lập! Trận đấu vẫn tiếp tục gay cấn trong 5 phút!`,
+          'progress',
+          team.id,
+          player.name
+        );
       }
     } else {
       soundService.playWrong();
@@ -1110,6 +1118,7 @@ class GameSyncService {
       }
 
       case 'TRUONG_SON_LOGISTICS': {
+        const prevProg = team.progress;
         team.progress = Math.min(100, team.progress + 5);
         this.addLiveEvent(
           `⛽ [Tiếp viện Trường Sơn] bổ sung nhiên liệu! ${team.name} tăng thêm +5% tiến độ!`,
@@ -1117,8 +1126,13 @@ class GameSyncService {
           team.id,
           player.name
         );
-        if (team.progress >= 100) {
-          this.triggerVictory(team.id, player.name);
+        if (team.progress >= 100 && prevProg < 100) {
+          this.addLiveEvent(
+            `🚩 Xe tăng của ${team.name} (${team.corpsName}) đã tiến vào Dinh Độc Lập! Trận đấu vẫn tiếp tục gay cấn trong 5 phút!`,
+            'progress',
+            team.id,
+            player.name
+          );
         }
         break;
       }
@@ -1397,15 +1411,14 @@ class GameSyncService {
     if (this.state.roomState.phase === 'FINISHED') return;
 
     const sortedTeams = [...this.state.teams].sort((a, b) => {
-      if (a.progress >= 100 && b.progress < 100) return -1;
-      if (b.progress >= 100 && a.progress < 100) return 1;
-      // Điểm đội quyết định chiến thắng tổng quan
+      // 1. Điểm đội quyết định chiến thắng tổng quan
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      // 2. Nếu bằng điểm, xét tiến độ về đích
       return b.progress - a.progress;
     });
 
     const winner = sortedTeams[0];
-    this.triggerVictory(winner.id, 'Chỉ Huy Sở phát lệnh kết thúc trận');
+    this.triggerVictory(winner.id, 'Hết thời gian tác chiến 5 phút');
   }
 
   // ==========================================
