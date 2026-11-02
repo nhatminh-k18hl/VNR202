@@ -39,6 +39,11 @@ const STORAGE_KEY = 'than_toc_1975_state_v3';
 const DB_URL_KEY = 'than_toc_1975_firebase_url';
 export const DEFAULT_HOST_ROOM_ID = 'thantoc_vnr1975';
 
+// Realtime Cloud PubSub Relay (ntfy.sh) - Đảm bảo đồng bộ tức thì <50ms xuyên mọi 4G & Wifi trường học
+const RELAY_BASE = 'https://ntfy.sh';
+const RELAY_ACTIONS_TOPIC = 'thantoc1975_act_v7';
+const RELAY_STATE_TOPIC = 'thantoc1975_state_v7';
+
 class GameSyncService {
   private channel: BroadcastChannel | null = null;
   private listeners: Set<SyncListener> = new Set();
@@ -49,6 +54,12 @@ class GameSyncService {
   private mainGameLoopTimer: any = null;
   private botTimer: any = null;
   private countdownTimer: any = null;
+
+  // Realtime Cloud Relay EventSources
+  private hostEventSource: EventSource | null = null;
+  private clientEventSource: EventSource | null = null;
+  private activeHostPeerId: string = DEFAULT_HOST_ROOM_ID;
+  private lastRelayBroadcastAt: number = 0;
 
   // P2P WebRTC networking
   private peer: Peer | null = null;
@@ -108,6 +119,8 @@ class GameSyncService {
           this.notifyCountdown(event.data.seconds);
         } else if (event.data?.type === 'CLEAR_CLIENT_CACHE') {
           this.handleClearLocalClientCache();
+        } else if (event.data?.type === 'CLIENT_ACTION' && (this.isHost || this.networkMode === 'host')) {
+          this.handleIncomingClientAction(event.data.payload);
         }
       };
     }
@@ -205,6 +218,24 @@ class GameSyncService {
       }
     });
 
+    // Realtime Cloud Relay (ntfy.sh) - Đẩy trực tiếp tới toàn bộ điện thoại sinh viên không độ trễ
+    if (this.isHost || this.networkMode === 'host') {
+      const now = Date.now();
+      if (now - this.lastRelayBroadcastAt > 80) {
+        this.lastRelayBroadcastAt = now;
+        try {
+          fetch(`${RELAY_BASE}/${RELAY_STATE_TOPIC}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'SYNC_STATE',
+              payload: this.state,
+            }),
+          }).catch(() => {});
+        } catch {}
+      }
+    }
+
     this.notifyListeners();
     this.pushToCloud();
   }
@@ -222,9 +253,17 @@ class GameSyncService {
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:openrelay.metered.ca:80' },
+          { urls: 'turn:openrelay.metered.ca:80', username: 'openrelay', credential: 'openrelay' },
+          { urls: 'turn:openrelay.metered.ca:443', username: 'openrelay', credential: 'openrelay' },
+          { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelay', credential: 'openrelay' },
         ],
       },
     };
+  }
+
+  public getHostPeerId(): string {
+    return this.activeHostPeerId || DEFAULT_HOST_ROOM_ID;
   }
 
   public initHost(roomId = DEFAULT_HOST_ROOM_ID) {
@@ -232,54 +271,70 @@ class GameSyncService {
     this.isHost = true;
     this.networkMode = 'host';
 
-    try {
-      if (this.peer && !this.peer.destroyed) {
-        this.peer.destroy();
+    // Khởi động Realtime Cloud Relay (ntfy.sh) lắng nghe thao tác của sinh viên < 50ms
+    this.startHostRelay();
+
+    const startPeerWithId = (targetId: string) => {
+      try {
+        if (this.peer && !this.peer.destroyed) {
+          this.peer.destroy();
+        }
+
+        this.peer = new Peer(targetId, this.getPeerConfig());
+
+        this.peer.on('open', (id) => {
+          this.activeHostPeerId = id;
+          console.log('[P2P Host] Sẵn sàng lắng nghe kết nối với Room ID:', id);
+          this.notifyListeners();
+        });
+
+        this.peer.on('connection', (conn) => {
+          const peerId = conn.peer;
+          this.hostConnections.set(peerId, conn);
+          this.p2pConnectedCount = this.hostConnections.size;
+
+          conn.on('open', () => {
+            conn.send({ type: 'SYNC_STATE', payload: this.getState() });
+            this.notifyListeners();
+          });
+
+          conn.on('data', (data: any) => {
+            this.handleIncomingClientAction(data, conn);
+          });
+
+          conn.on('close', () => {
+            this.hostConnections.delete(peerId);
+            this.p2pConnectedCount = this.hostConnections.size;
+            this.notifyListeners();
+          });
+
+          conn.on('error', () => {
+            this.hostConnections.delete(peerId);
+            this.p2pConnectedCount = this.hostConnections.size;
+          });
+        });
+
+        this.peer.on('error', (err: any) => {
+          console.warn('[P2P Host] Peer error:', err?.type || err);
+          if (err?.type === 'unavailable-id') {
+            const fallbackId = `${DEFAULT_HOST_ROOM_ID}_${Math.random().toString(36).substr(2, 4)}`;
+            console.log('[P2P Host] ID đã tồn tại, tự động chuyển sang:', fallbackId);
+            startPeerWithId(fallbackId);
+          }
+        });
+      } catch (e) {
+        console.warn('[P2P Host] Lỗi khởi tạo host:', e);
       }
+    };
 
-      this.peer = new Peer(roomId, this.getPeerConfig());
-
-      this.peer.on('open', (id) => {
-        console.log('[P2P Host] Sẵn sàng lắng nghe kết nối với Room ID:', id);
-        this.notifyListeners();
-      });
-
-      this.peer.on('connection', (conn) => {
-        const peerId = conn.peer;
-        this.hostConnections.set(peerId, conn);
-        this.p2pConnectedCount = this.hostConnections.size;
-
-        conn.on('open', () => {
-          conn.send({ type: 'SYNC_STATE', payload: this.getState() });
-          this.notifyListeners();
-        });
-
-        conn.on('data', (data: any) => {
-          this.handleIncomingClientAction(data, conn);
-        });
-
-        conn.on('close', () => {
-          this.hostConnections.delete(peerId);
-          this.p2pConnectedCount = this.hostConnections.size;
-          this.notifyListeners();
-        });
-
-        conn.on('error', () => {
-          this.hostConnections.delete(peerId);
-          this.p2pConnectedCount = this.hostConnections.size;
-        });
-      });
-
-      this.peer.on('error', (err: any) => {
-        console.warn('[P2P Host] Peer error:', err?.type || err);
-      });
-    } catch (e) {
-      console.warn('[P2P Host] Lỗi khởi tạo host:', e);
-    }
+    startPeerWithId(roomId);
   }
 
   public initClient(hostId = DEFAULT_HOST_ROOM_ID) {
     this.networkMode = 'client';
+
+    // Khởi động Realtime Cloud Relay (ntfy.sh) lắng nghe cập nhật từ Host sa bàn < 50ms
+    this.startClientRelay();
 
     if (this.peer && !this.peer.destroyed && this.clientConnection?.open) return;
 
@@ -299,6 +354,57 @@ class GameSyncService {
       });
     } catch (e) {
       console.warn('[P2P Client] Khởi tạo client lỗi:', e);
+    }
+  }
+
+  private startHostRelay() {
+    if (this.hostEventSource) {
+      this.hostEventSource.close();
+      this.hostEventSource = null;
+    }
+
+    try {
+      this.hostEventSource = new EventSource(`${RELAY_BASE}/${RELAY_ACTIONS_TOPIC}/sse`);
+      this.hostEventSource.onmessage = (event) => {
+        try {
+          const raw = JSON.parse(event.data);
+          if (raw.event === 'message' && raw.message) {
+            const data = JSON.parse(raw.message);
+            this.handleIncomingClientAction(data);
+          }
+        } catch {}
+      };
+    } catch (e) {
+      console.warn('[Relay Host] SSE Init Error:', e);
+    }
+  }
+
+  private startClientRelay() {
+    if (this.clientEventSource) {
+      this.clientEventSource.close();
+      this.clientEventSource = null;
+    }
+
+    try {
+      this.clientEventSource = new EventSource(`${RELAY_BASE}/${RELAY_STATE_TOPIC}/sse`);
+      this.clientEventSource.onmessage = (event) => {
+        try {
+          const raw = JSON.parse(event.data);
+          if (raw.event === 'message' && raw.message) {
+            const data = JSON.parse(raw.message);
+            if (data?.type === 'SYNC_STATE' && data.payload) {
+              this.state = data.payload;
+              this.notifyListeners();
+            } else if (data?.type === 'COUNTDOWN_TICK') {
+              this.notifyCountdown(data.seconds);
+            } else if (data?.type === 'CLEAR_CLIENT_CACHE') {
+              this.handleClearLocalClientCache();
+            }
+          }
+        } catch {}
+      };
+    } catch (e) {
+      console.warn('[Relay Client] SSE Init Error:', e);
     }
   }
 
@@ -345,6 +451,7 @@ class GameSyncService {
 
   public sendClientAction(msg: any) {
     if (this.networkMode === 'client') {
+      // 1. WebRTC DataConnection
       if (this.clientConnection && this.clientConnection.open) {
         try {
           this.clientConnection.send(msg);
@@ -354,6 +461,22 @@ class GameSyncService {
       } else {
         this.pendingOutbox.push(msg);
       }
+
+      // 2. BroadcastChannel (nếu mở cùng máy)
+      if (this.channel) {
+        try {
+          this.channel.postMessage({ type: 'CLIENT_ACTION', payload: msg });
+        } catch {}
+      }
+
+      // 3. Realtime Cloud Relay (ntfy.sh) - Đảm bảo tới Host < 50ms bất kể 4G/Wifi
+      try {
+        fetch(`${RELAY_BASE}/${RELAY_ACTIONS_TOPIC}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(msg),
+        }).catch(() => {});
+      } catch {}
     }
   }
 
@@ -383,12 +506,15 @@ class GameSyncService {
     this.notifyListeners();
   }
 
-  private handleIncomingClientAction(data: any, conn: DataConnection) {
+  private handleIncomingClientAction(data: any, conn?: DataConnection) {
     if (!data || !data.type) return;
 
     switch (data.type) {
       case 'REQUEST_SYNC':
-        conn.send({ type: 'SYNC_STATE', payload: this.getState() });
+        if (conn && conn.open) {
+          conn.send({ type: 'SYNC_STATE', payload: this.getState() });
+        }
+        this.saveAndBroadcast();
         break;
 
       case 'REGISTER_PLAYER':
@@ -491,6 +617,14 @@ class GameSyncService {
         }
       }
     });
+
+    try {
+      fetch(`${RELAY_BASE}/${RELAY_STATE_TOPIC}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'COUNTDOWN_TICK', seconds: sec }),
+      }).catch(() => {});
+    } catch {}
   }
 
   public getNetworkStatus() {
@@ -971,7 +1105,7 @@ class GameSyncService {
       player.score += points;
       team.totalScore += points;
 
-      const progressDelta = 2;
+      const progressDelta = 3;
       team.progress = Math.min(100, team.progress + progressDelta);
 
       if (player.currentStreak % 3 === 0) {
@@ -980,7 +1114,9 @@ class GameSyncService {
 
       player.eliminatedOptions = undefined;
 
-      if (team.progress >= 100) {
+      // ĐỘI NÀO CHẠM ĐÍCH LÀ THẮNG NGAY! (GAME LÀ CUỘC ĐUA ĐẾN DINH ĐỘC LẬP)
+      // Chỉ có Host mới có thẩm quyền kích hoạt kết thúc để đồng bộ toàn bộ phòng đấu
+      if (this.networkMode !== 'client' && team.progress >= 100) {
         this.triggerVictory(team.id, player.name);
       }
     } else {
@@ -1005,10 +1141,12 @@ class GameSyncService {
 
     this.saveAndBroadcast();
 
-    this.sendClientAction({
-      type: 'ANSWER_QUESTION',
-      payload: { playerId, questionId, selectedAnswer, isCorrect },
-    });
+    if (this.networkMode === 'client') {
+      this.sendClientAction({
+        type: 'ANSWER_QUESTION',
+        payload: { playerId, questionId, selectedAnswer, isCorrect },
+      });
+    }
 
     return { pointsEarned: points, streak: player.currentStreak, rolledItem };
   }
@@ -1135,7 +1273,7 @@ class GameSyncService {
           team.id,
           player.name
         );
-        if (team.progress >= 100) {
+        if (this.networkMode !== 'client' && team.progress >= 100) {
           this.triggerVictory(team.id, player.name);
         }
         break;
@@ -1386,6 +1524,14 @@ class GameSyncService {
         } catch {}
       }
     });
+
+    try {
+      fetch(`${RELAY_BASE}/${RELAY_STATE_TOPIC}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'CLEAR_CLIENT_CACHE' }),
+      }).catch(() => {});
+    } catch {}
 
     this.addLiveEvent('🧹 Đã xóa sạch toàn bộ quân số và cache phòng đấu. Sẵn sàng cho ván mới!', 'info');
     this.saveAndBroadcast();

@@ -107,7 +107,11 @@ export const PlayPage: React.FC = () => {
 
   // 1. Khởi tạo WebRTC P2P Client để đồng bộ không độ trễ với Host
   useEffect(() => {
-    gameSyncService.initClient();
+    const hash = window.location.hash;
+    const queryString = hash.includes('?') ? hash.split('?')[1] : window.location.search.replace(/^\?/, '');
+    const urlParams = new URLSearchParams(queryString);
+    const hostId = urlParams.get('host') || undefined;
+    gameSyncService.initClient(hostId);
   }, []);
 
   // 2. Khôi phục danh tính đã lưu từ localStorage

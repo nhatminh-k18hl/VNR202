@@ -387,7 +387,8 @@ export const AdminPage: React.FC = () => {
     setShowStatsModal(true);
   };
 
-  const playUrl = `${window.location.origin}${window.location.pathname}#/play`;
+  const currentHostId = gameSyncService.getHostPeerId();
+  const playUrl = `${window.location.origin}${window.location.pathname}#/play?host=${encodeURIComponent(currentHostId)}`;
 
   if (!isAuthenticated) {
     return (
@@ -696,7 +697,7 @@ export const AdminPage: React.FC = () => {
                   <span>Phòng thi đua: <strong className="font-mono text-red-600 dark:text-amber-400">#VNR1975</strong></span>
                   <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    P2P Host Sẵn Sàng
+                    Realtime Cloud Sync Sẵn Sàng
                   </span>
                 </div>
               </div>
