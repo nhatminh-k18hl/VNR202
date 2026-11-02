@@ -49,6 +49,99 @@ export function getTopScorePlayers(players: PlayerState[], limit: number = 10): 
 }
 
 /**
+ * Xếp hạng 6 Đội đua theo quy tắc:
+ * 1. Đội húc đổ cổng Dinh Độc Lập (tiến độ 100%) trước
+ * 2. Điểm đội quyết định chiến thắng tổng quan
+ * 3. Tiến độ xe tăng
+ */
+export function getTeamRankings(teams: TeamState[]): TeamState[] {
+  return [...teams].sort((a, b) => {
+    if (a.progress >= 100 && b.progress < 100) return -1;
+    if (b.progress >= 100 && a.progress < 100) return 1;
+    if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+    return b.progress - a.progress;
+  });
+}
+
+export interface PlayerPersonalRanking {
+  teamRank: number;
+  totalTeams: number;
+  teamName: string;
+  corpsName: string;
+  tankNumber: string;
+  teamScore: number;
+  teamProgress: number;
+  playerTeamRank: number;
+  teamMembersCount: number;
+  isTeamMvp: boolean;
+  overallRank: number;
+  totalPlayers: number;
+  score: number;
+  maxStreak: number;
+  correctCount: number;
+  totalAnswered: number;
+}
+
+/**
+ * Tính toán xếp hạng cá nhân chi tiết:
+ * - Hạng của Đội (Team Rank)
+ * - Vị trí của người chơi trong Đội (Player Team Rank, xét MVP)
+ * - Hạng tổng thể toàn trường (Overall Rank)
+ */
+export function getPlayerRankingDetails(
+  playerId: string,
+  players: PlayerState[],
+  teams: TeamState[]
+): PlayerPersonalRanking | null {
+  const player = players.find((p) => p.id === playerId);
+  if (!player) return null;
+
+  const rankedTeams = getTeamRankings(teams);
+  const teamIndex = rankedTeams.findIndex((t) => t.id === player.teamId);
+  const teamRank = teamIndex !== -1 ? teamIndex + 1 : 1;
+  const team = teams.find((t) => t.id === player.teamId);
+
+  const teamPlayers = players
+    .filter((p) => p.teamId === player.teamId)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.maxStreak !== a.maxStreak) return b.maxStreak - a.maxStreak;
+      return b.correctCount - a.correctCount;
+    });
+
+  const playerTeamIndex = teamPlayers.findIndex((p) => p.id === playerId);
+  const playerTeamRank = playerTeamIndex !== -1 ? playerTeamIndex + 1 : 1;
+  const isTeamMvp = playerTeamRank === 1;
+
+  const overallPlayers = [...players].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
+    return b.maxStreak - a.maxStreak;
+  });
+  const overallIndex = overallPlayers.findIndex((p) => p.id === playerId);
+  const overallRank = overallIndex !== -1 ? overallIndex + 1 : 1;
+
+  return {
+    teamRank,
+    totalTeams: teams.length,
+    teamName: team?.name || '',
+    corpsName: team?.corpsName || '',
+    tankNumber: team?.tankNumber || '',
+    teamScore: team?.totalScore || 0,
+    teamProgress: team?.progress || 0,
+    playerTeamRank,
+    teamMembersCount: teamPlayers.length,
+    isTeamMvp,
+    overallRank,
+    totalPlayers: players.length,
+    score: player.score,
+    maxStreak: player.maxStreak,
+    correctCount: player.correctCount,
+    totalAnswered: player.totalAnswered,
+  };
+}
+
+/**
  * Tính toán toàn bộ thông số vinh danh cuối trận đấu (Game Summary Stats)
  */
 export function calculateGameSummaryStats(
@@ -58,10 +151,7 @@ export function calculateGameSummaryStats(
   discoveredEasterEggs: BoostItem[] = []
 ): GameSummaryStats {
   // 1. Xếp hạng 6 Đội (Team Podium)
-  const teamRankings = [...teams].sort((a, b) => {
-    if (b.progress !== a.progress) return b.progress - a.progress;
-    return b.totalScore - a.totalScore;
-  });
+  const teamRankings = getTeamRankings(teams);
 
   // 2. Xác định đội thắng
   let winningTeam: TeamState | null = null;

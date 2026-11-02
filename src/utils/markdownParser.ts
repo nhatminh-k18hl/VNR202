@@ -58,8 +58,8 @@ export function parseQuestionsMarkdown(markdownText: string): Question[] {
     const rawLine = lines[i];
     const line = rawLine.trim();
 
-    // Nhận diện tiêu đề câu hỏi: # Câu 1: hoặc ## Câu 1:
-    const questionHeaderMatch = line.match(/^#{1,3}\s*C[âa]u\s*(\d+)[\s:.]+(.*)$/i);
+    // Nhận diện tiêu đề câu hỏi: # Câu 1: hoặc ## Câu 1: hoặc Câu 1:
+    const questionHeaderMatch = line.match(/^(?:#{1,3}\s*)?C[âa]u\s*(\d+)[\s:.]+(.*)$/i);
     if (questionHeaderMatch) {
       saveCurrentQuestion();
       currentId = parseInt(questionHeaderMatch[1], 10);
@@ -70,11 +70,16 @@ export function parseQuestionsMarkdown(markdownText: string): Question[] {
 
     if (!isParsingQuestion) continue;
 
-    // Nhận diện phương án: - [ ] A. hoặc - [x] B. hoặc - [X] C.
-    const optionMatch = line.match(/^-\s*\[([ xX])\]\s*([A-Da-d])[\.:\)]\s*(.*)$/);
+    // Nhận diện phương án: - [ ] A. hoặc [ ] A. hoặc [ ] hoặc - [ ]
+    const optionMatch = line.match(/^(?:-\s*)?\[([ xX])\]\s*(?:([A-Da-d])[\.:\)])?\s*(.*)$/);
     if (optionMatch) {
       const isChecked = optionMatch[1].toLowerCase() === 'x';
-      const optionLetter = optionMatch[2].toUpperCase() as AnswerKey;
+      let optionLetter = optionMatch[2] ? (optionMatch[2].toUpperCase() as AnswerKey) : null;
+      if (!optionLetter) {
+        const letters: AnswerKey[] = ['A', 'B', 'C', 'D'];
+        const existingCount = Object.keys(options).length;
+        optionLetter = letters[existingCount] || 'D';
+      }
       const optionContent = optionMatch[3].trim();
 
       options[optionLetter] = optionContent;
@@ -84,9 +89,10 @@ export function parseQuestionsMarkdown(markdownText: string): Question[] {
       continue;
     }
 
-    // Nhận diện phần Giải thích: > Giải thích: ... hoặc > ...
-    if (line.startsWith('>')) {
-      const expContent = line.replace(/^>\s*(?:Gi[ảa]i\s*th[íi]ch:?)?\s*/i, '').trim();
+    // Nhận diện phần Giải thích: > Giải thích: ... hoặc Giải thích: ... hoặc > ...
+    const expMatch = line.match(/^(?:>\s*)?(?:Gi[ảa]i\s*th[íi]ch:?)\s*(.*)$/i);
+    if (expMatch) {
+      const expContent = expMatch[1].trim();
       if (explanation) {
         explanation += ' ' + expContent;
       } else {
@@ -95,8 +101,26 @@ export function parseQuestionsMarkdown(markdownText: string): Question[] {
       continue;
     }
 
+    if (line.startsWith('>')) {
+      const expContent = line.replace(/^>\s*/, '').trim();
+      if (explanation) {
+        explanation += ' ' + expContent;
+      } else {
+        explanation = expContent;
+      }
+      continue;
+    }
+
+    // Nếu đã có explanation, các dòng kế tiếp là nối dài explanation (bỏ qua chú thích ảnh/source)
+    if (explanation) {
+      if (!line.toLowerCase().includes('source:')) {
+        explanation += ' ' + line;
+      }
+      continue;
+    }
+
     // Nếu là dòng text nối tiếp của tiêu đề câu hỏi (trước khi xuất hiện option đầu tiên)
-    if (Object.keys(options).length === 0 && !line.startsWith('-') && !line.startsWith('>')) {
+    if (Object.keys(options).length === 0 && !line.startsWith('-') && !line.startsWith('[')) {
       if (line) {
         currentQuestionText += ' ' + line;
       }

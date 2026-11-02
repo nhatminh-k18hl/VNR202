@@ -149,7 +149,7 @@ export const App: React.FC = () => {
       const savedTheme = localStorage.getItem('than_toc_theme');
       if (savedTheme) return savedTheme === 'dark';
     }
-    return true; // Mặc định dark mode sa bàn chiến thuật
+    return false; // Mặc định sáng (Light Mode) theo yêu cầu giảng đường
   });
 
   useEffect(() => {

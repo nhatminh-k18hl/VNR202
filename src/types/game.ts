@@ -102,6 +102,7 @@ export interface TeamState {
 
 export interface PlayerState {
   id: string;
+  deviceId?: string;        // Định danh thiết bị chống phân thân user
   name: string;
   studentCode?: string;
   teamId: TeamId;
@@ -117,6 +118,7 @@ export interface PlayerState {
   shellShockExpiresAt?: number;
   eliminatedOptions?: AnswerKey[]; // Đáp án bị loại bỏ bởi Easter Egg
   isBot?: boolean;
+  lastActiveAt?: number;
 }
 
 export interface HistoricalMilestone {
@@ -130,6 +132,7 @@ export type GamePhase = 'WAITING' | 'BATTLE' | 'PAUSED' | 'FINISHED';
 
 export interface RoomState {
   phase: GamePhase;
+  isLobbyOpen: boolean; // Chỉ khi Admin mở thì người chơi mới được vào chọn team / chiến hào
   startedAt?: number;
   finishedAt?: number;
   winnerTeamId?: TeamId | null;

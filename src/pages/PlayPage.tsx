@@ -23,6 +23,7 @@ import { INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
 import { fetchAndParseQuestions } from '../utils/markdownParser';
 import { FullGameState, gameSyncService } from '../services/gameSyncService';
 import { soundService } from '../services/soundService';
+import { getPlayerRankingDetails, PlayerPersonalRanking } from '../utils/statsCalculator';
 
 /**
  * Thuật toán xáo trộn Fisher-Yates để random thứ tự câu hỏi cho từng người chơi
@@ -40,6 +41,16 @@ function shuffleArray<T>(items: T[]): T[] {
 export const PlayPage: React.FC = () => {
   const [gameState, setGameState] = useState<FullGameState>(gameSyncService.getState());
   const [isMuted, setIsMuted] = useState<boolean>(soundService.getMuted());
+
+  // Định danh thiết bị cố định chống trùng lặp / phân thân user
+  const [deviceId] = useState<string>(() => {
+    let dId = localStorage.getItem('than_toc_device_id');
+    if (!dId) {
+      dId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      localStorage.setItem('than_toc_device_id', dId);
+    }
+    return dId;
+  });
 
   // Trạng thái người chơi & Sảnh chờ
   const [isJoined, setIsJoined] = useState<boolean>(false);
@@ -92,15 +103,27 @@ export const PlayPage: React.FC = () => {
       setPlayerName(savedName);
       setSelectedTeamId(savedTeam);
       setStudentCode(savedStudentCode);
-      gameSyncService.registerPlayer({ 
-        id: savedId, 
-        name: savedName, 
-        studentCode: savedStudentCode || undefined,
-        teamId: savedTeam 
-      });
-      setIsJoined(true);
+      if (gameState.roomState.isLobbyOpen || gameState.roomState.phase === 'BATTLE') {
+        gameSyncService.registerPlayer({ 
+          id: savedId, 
+          deviceId,
+          name: savedName, 
+          studentCode: savedStudentCode || undefined,
+          teamId: savedTeam 
+        });
+        setIsJoined(true);
+      }
     }
-  }, []);
+  }, [deviceId, gameState.roomState.isLobbyOpen, gameState.roomState.phase]);
+
+  // Nhịp tim kết nối (Heartbeat PING)
+  useEffect(() => {
+    if (!isJoined || !playerId) return;
+    const pingInterval = setInterval(() => {
+      gameSyncService.sendClientAction({ type: 'PING', playerId });
+    }, 4000);
+    return () => clearInterval(pingInterval);
+  }, [isJoined, playerId]);
 
   // 3. Lắng nghe cập nhật chiến trường từ gameSyncService
   useEffect(() => {
@@ -178,6 +201,7 @@ export const PlayPage: React.FC = () => {
         if (!isJoined) {
           gameSyncService.registerPlayer({
             id: activeId,
+            deviceId,
             name: savedName,
             studentCode: savedCode || undefined,
             teamId: savedTeam,
@@ -261,6 +285,7 @@ export const PlayPage: React.FC = () => {
 
     gameSyncService.registerPlayer({
       id: newId,
+      deviceId,
       name: playerName.trim(),
       studentCode: studentCode.trim() || undefined,
       teamId: selectedTeamId,
@@ -394,7 +419,7 @@ export const PlayPage: React.FC = () => {
   // Xác định cờ phase
   const isWaitingPhase = gameState.roomState.phase === 'WAITING';
   const isBattlePhase = gameState.roomState.phase === 'BATTLE';
-  const isEndedPhase = gameState.roomState.phase === 'ENDED';
+  const isEndedPhase = gameState.roomState.phase === 'FINISHED';
   const isCountingDown = countdownVal !== null && countdownVal > 0;
 
   // Tính phần trăm thời gian 18s còn lại
@@ -516,16 +541,17 @@ export const PlayPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Thanh chỉ số chiến đấu thu gọn trên Mobile khi đang tác chiến */}
+        {/* Thanh chỉ số chiến đấu: Tách bạch rõ Ràng Điểm Cá Nhân (MVP) và Điểm Đội (Vô địch) */}
         {isBattlePhase && isJoined && (
-          <div className="flex items-center justify-between pt-2 text-xs font-semibold text-stone-600 dark:text-stone-300">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-xs font-semibold text-stone-600 dark:text-stone-300">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1 font-bold text-stone-900 dark:text-white">
-                <span className="text-[11px] text-stone-400 font-normal">Tên:</span> {currentPlayer?.name || playerName}
+                <span className="text-[11px] text-stone-400 font-normal">Chiến sĩ:</span> {currentPlayer?.name || playerName}
               </span>
-              <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+              <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Điểm cá nhân xét giải MVP của cánh quân">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                {currentPlayer?.score || 0}đ
+                <span>Bạn: <strong>{currentPlayer?.score || 0}đ</strong></span>
+                <span className="text-[10px] text-stone-400 font-normal hidden sm:inline">(Tranh MVP)</span>
               </span>
               <span className="font-bold text-red-600 dark:text-red-400 flex items-center gap-0.5">
                 <Flame className="w-3.5 h-3.5 fill-red-500" />
@@ -533,8 +559,13 @@ export const PlayPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="text-[11px] font-mono text-stone-400">
-              Tiến độ đội: <strong className="text-stone-900 dark:text-white">{currentTeam?.progress}%</strong>
+            <div className="flex items-center gap-3 text-[11px] font-mono">
+              <span className="px-2 py-0.5 rounded-lg bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 font-bold border border-red-300 dark:border-red-900" title="Điểm tích lũy toàn đội quyết định Cúp vô địch">
+                🚩 Điểm Đội: <strong>{currentTeam?.totalScore || 0}đ</strong>
+              </span>
+              <span className="text-stone-500">
+                Tiến độ: <strong className="text-stone-900 dark:text-white">{currentTeam?.progress}%</strong>
+              </span>
             </div>
           </div>
         )}
@@ -545,103 +576,127 @@ export const PlayPage: React.FC = () => {
           Nếu mở link khi trận đã bắt đầu, hiển thị thông báo "XUẤT KÍCH CHI VIỆN NGAY"
           ========================================================================= */}
       {!isJoined ? (
-        <div className="max-w-xl mx-auto p-5 sm:p-8 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-xl space-y-5">
-          <div className="text-center space-y-1.5">
-            {isBattlePhase && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 dark:bg-red-950 border border-red-400 text-red-700 dark:text-red-300 text-xs font-black animate-pulse">
-                <Zap className="w-3.5 h-3.5 text-red-600" /> TRẬN ĐÁNH ĐANG DIỄN RA! VÀO CHI VIỆN NGAY!
-              </div>
-            )}
-            <h2 className="text-xl sm:text-2xl font-black uppercase text-stone-900 dark:text-white">
-              Ghi Danh Xuất Kích
-            </h2>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              Điền họ tên và chọn 1 trong 6 cánh quân để đồng loạt xuất kích
-            </p>
-          </div>
-
-          <form onSubmit={handleJoinLobby} className="space-y-4">
-            {validationError && (
-              <div className="p-3 rounded-xl bg-red-100 dark:bg-red-950/80 border border-red-500 text-red-700 dark:text-red-300 text-xs font-bold flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                <span>{validationError}</span>
-              </div>
-            )}
-
-            {/* Input Họ Tên: text-base chống zoom trên iOS Safari */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center justify-between">
-                <span>Họ và Tên của bạn:</span>
-                <span className="text-red-500 font-bold">* Bắt buộc</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="VD: Nguyễn Văn An"
-                className="w-full px-4 py-3 rounded-2xl border border-stone-300 dark:border-[#2a3c2e] bg-stone-50 dark:bg-[#0c120e] text-stone-900 dark:text-white text-base font-semibold focus:outline-none focus:border-red-500 dark:focus:border-amber-400 transition-colors"
-              />
+        !gameState.roomState.isLobbyOpen && !isBattlePhase ? (
+          <div className="max-w-xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#131b15] border-2 border-amber-400/80 dark:border-amber-700/80 shadow-2xl space-y-5 text-center animate-in fade-in duration-300">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-500/20 text-amber-500 border border-amber-400 flex items-center justify-center text-3xl shadow-inner">
+              ⭐
             </div>
-
-            {/* Input MSSV (Tùy chọn) */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center justify-between">
-                <span>Mã Số Sinh Viên (MSSV):</span>
-                <span className="text-stone-400 text-[11px]">(Không bắt buộc)</span>
-              </label>
-              <input
-                type="text"
-                value={studentCode}
-                onChange={(e) => setStudentCode(e.target.value)}
-                placeholder="VD: HE170001"
-                className="w-full px-4 py-2.5 rounded-2xl border border-stone-300 dark:border-[#2a3c2e] bg-stone-50 dark:bg-[#0c120e] text-stone-900 dark:text-white text-base font-semibold focus:outline-none focus:border-red-500 dark:focus:border-amber-400 transition-colors"
-              />
-            </div>
-
-            {/* Danh sách 6 cánh quân chọn nhanh */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
-                Chọn Cánh Quân / Chiếc Xe Tăng Của Bạn:
-              </label>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {INITIAL_TEAMS_CONFIG.map((team) => (
-                  <button
-                    type="button"
-                    key={team.id}
-                    onClick={() => setSelectedTeamId(team.id)}
-                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between active:scale-[0.98] ${
-                      selectedTeamId === team.id
-                        ? 'border-red-600 dark:border-amber-400 bg-red-50/80 dark:bg-[#1a261c] shadow-sm ring-2 ring-red-600/40 dark:ring-amber-400/40'
-                        : 'border-stone-200 dark:border-[#233426] bg-stone-50 dark:bg-[#0e1610] hover:border-stone-400'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-stone-900 dark:text-white">{team.name}</span>
-                        <span 
-                          className="w-2.5 h-2.5 rounded-full" 
-                          style={{ backgroundColor: team.color }} 
-                        />
-                      </div>
-                      <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1 mt-0.5">
-                        Xe #{team.tankNumber} • {team.corpsName}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <span className="text-[11px] font-black uppercase px-3.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 tracking-wider">
+                CHỜ LỆNH CHỈ HUY SỞ
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black uppercase text-stone-900 dark:text-white">
+                SẢNH TUYỂN QUÂN ĐANG TẠM KHÓA
+              </h2>
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 max-w-md mx-auto leading-relaxed">
+                Vui lòng quan sát máy chiếu trên lớp. Khi Ban Quản Trò (Nhóm 6) phát lệnh <strong>"Mở Tuyển Quân"</strong>, bạn sẽ có thể đăng ký tên và chọn chiến hào của riêng mình ngay lập tức!
+              </p>
+            </div>
+            <div className="p-3 rounded-2xl bg-stone-100 dark:bg-[#0c120e] text-xs text-stone-500 font-mono flex items-center justify-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>Đang kết nối thời gian thực với phòng tác chiến...</span>
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-xl mx-auto p-5 sm:p-8 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-xl space-y-5">
+            <div className="text-center space-y-1.5">
+              {isBattlePhase && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 dark:bg-red-950 border border-red-400 text-red-700 dark:text-red-300 text-xs font-black animate-pulse">
+                  <Zap className="w-3.5 h-3.5 text-red-600" /> TRẬN ĐÁNH ĐANG DIỄN RA! VÀO CHI VIỆN NGAY!
+                </div>
+              )}
+              <h2 className="text-xl sm:text-2xl font-black uppercase text-stone-900 dark:text-white">
+                Ghi Danh Xuất Kích
+              </h2>
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                Điền họ tên và chọn 1 trong 6 chiến hào để đồng loạt xuất kích
+              </p>
             </div>
 
-            <button
-              type="submit"
-              className="w-full min-h-[50px] py-3 rounded-2xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-600/30 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Zap className="w-4 h-4 fill-white" />
-              <span>{isBattlePhase ? 'VÀO TRẬN CHI VIỆN NGAY!' : 'VÀO SẢNH CHỜ XUẤT KÍCH'}</span>
-            </button>
-          </form>
-        </div>
+            <form onSubmit={handleJoinLobby} className="space-y-4">
+              {validationError && (
+                <div className="p-3 rounded-xl bg-red-100 dark:bg-red-950/80 border border-red-500 text-red-700 dark:text-red-300 text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  <span>{validationError}</span>
+                </div>
+              )}
+
+              {/* Input Họ Tên: text-base chống zoom trên iOS Safari */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center justify-between">
+                  <span>Họ và Tên của bạn:</span>
+                  <span className="text-red-500 font-bold">* Bắt buộc</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder="VD: Nguyễn Văn An"
+                  className="w-full px-4 py-3 rounded-2xl border border-stone-300 dark:border-[#2a3c2e] bg-stone-50 dark:bg-[#0c120e] text-stone-900 dark:text-white text-base font-semibold focus:outline-none focus:border-red-500 dark:focus:border-amber-400 transition-colors"
+                />
+              </div>
+
+              {/* Input MSSV (Tùy chọn) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center justify-between">
+                  <span>Mã Số Sinh Viên (MSSV):</span>
+                  <span className="text-stone-400 text-[11px]">(Không bắt buộc)</span>
+                </label>
+                <input
+                  type="text"
+                  value={studentCode}
+                  onChange={(e) => setStudentCode(e.target.value)}
+                  placeholder="VD: HE170001"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-stone-300 dark:border-[#2a3c2e] bg-stone-50 dark:bg-[#0c120e] text-stone-900 dark:text-white text-base font-semibold focus:outline-none focus:border-red-500 dark:focus:border-amber-400 transition-colors"
+                />
+              </div>
+
+              {/* Danh sách 6 cánh quân chọn nhanh */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center justify-between">
+                  <span>Chọn Chiến Hào / Chiếc Xe Tăng Của Riêng Bạn:</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-bold text-[11px]">Chọn 1 trong 6 đội</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {INITIAL_TEAMS_CONFIG.map((team) => (
+                    <button
+                      type="button"
+                      key={team.id}
+                      onClick={() => setSelectedTeamId(team.id)}
+                      className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between active:scale-[0.98] cursor-pointer ${
+                        selectedTeamId === team.id
+                          ? 'border-red-600 dark:border-amber-400 bg-red-50/80 dark:bg-[#1a261c] shadow-sm ring-2 ring-red-600/40 dark:ring-amber-400/40'
+                          : 'border-stone-200 dark:border-[#233426] bg-stone-50 dark:bg-[#0e1610] hover:border-stone-400'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-stone-900 dark:text-white">{team.name}</span>
+                          <span 
+                            className="w-2.5 h-2.5 rounded-full" 
+                            style={{ backgroundColor: team.color }} 
+                          />
+                        </div>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1 mt-0.5">
+                          Xe #{team.tankNumber} • {team.corpsName}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full min-h-[50px] py-3 rounded-2xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-600/30 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Zap className="w-4 h-4 fill-white" />
+                <span>{isBattlePhase ? 'VÀO TRẬN CHI VIỆN NGAY!' : 'VÀO SẢNH CHỜ XUẤT KÍCH'}</span>
+              </button>
+            </form>
+          </div>
+        )
       ) : isWaitingPhase ? (
         /* =========================================================================
             MÀN HÌNH SẢNH CHỜ: HIỂN THỊ ĐỒNG ĐỘI & CHỜ LỆNH TỪ QUẢN TRÒ
@@ -738,50 +793,126 @@ export const PlayPage: React.FC = () => {
       ) : isEndedPhase ? (
         /* =========================================================================
             MÀN HÌNH 3: TỔNG KẾT TRẬN ĐÁNH & CHIẾN THẮNG LỊCH SỬ 1975
+            Hiển thị rõ:
+            - Hạng của Cánh quân (Top #1 / 6 Đội)
+            - Vị trí trong Đội (Xét MVP)
+            - Hạng tổng thể toàn trường (Overall Rank)
             ========================================================================= */
-        <div className="max-w-xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-500/20 text-amber-500 flex items-center justify-center text-3xl shadow-inner border border-amber-400">
-            <Trophy className="w-8 h-8" />
-          </div>
+        (() => {
+          const rankDetails = playerId
+            ? getPlayerRankingDetails(playerId, gameState.players, gameState.teams)
+            : null;
 
-          <div className="space-y-1.5">
-            <h2 className="text-2xl sm:text-3xl font-black uppercase text-stone-900 dark:text-white">
-              CHIẾN DỊCH HOÀN TẤT!
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400">
-              Cờ chiến thắng đã phất trên nóc Dinh Độc Lập lúc 11h30 ngày 30/4/1975!
-            </p>
-          </div>
+          return (
+            <div className="max-w-xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#131b15] border-2 border-amber-400 dark:border-amber-600 shadow-2xl text-center space-y-6 animate-in zoom-in-95 duration-200">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-amber-500/20 text-amber-500 flex items-center justify-center text-4xl shadow-inner border-2 border-amber-400">
+                <Trophy className="w-10 h-10" />
+              </div>
 
-          {/* Thành tích cá nhân */}
-          <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#0c120e] border border-stone-200 dark:border-[#223025] grid grid-cols-3 gap-2 text-center">
-            <div>
-              <span className="text-[11px] text-stone-400 block">Điểm số</span>
-              <span className="text-lg font-black text-amber-600 dark:text-amber-400">{currentPlayer?.score || 0}đ</span>
-            </div>
-            <div>
-              <span className="text-[11px] text-stone-400 block">Đúng / Tổng</span>
-              <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">
-                {stats.correctCount} / {stats.totalAnswered}
-              </span>
-            </div>
-            <div>
-              <span className="text-[11px] text-stone-400 block">Streak cao nhất</span>
-              <span className="text-lg font-black text-red-600 dark:text-red-400">
-                {currentPlayer?.currentStreak || 0} 🔥
-              </span>
-            </div>
-          </div>
+              <div className="space-y-1.5">
+                <span className="text-xs font-black uppercase tracking-widest text-red-600 dark:text-amber-400">
+                  ★ ĐẠI THẮNG MÙA XUÂN 1975 ★
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black uppercase text-stone-900 dark:text-white">
+                  CHIẾN DỊCH HOÀN TẤT!
+                </h2>
+                <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400">
+                  Cờ chiến thắng đã phất trên nóc Dinh Độc Lập lúc 11h30 ngày 30/4/1975!
+                </p>
+              </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Link
-              to="/"
-              className="px-6 py-3 rounded-2xl bg-stone-900 hover:bg-black text-white dark:bg-stone-800 text-xs font-black uppercase tracking-wider"
-            >
-              Xem Sa Bàn Toàn Cảnh
-            </Link>
-          </div>
-        </div>
+              {/* CARD THỐNG KÊ XẾP HẠNG CHI TIẾT (TEAM RANK & MVP VỊ TRÍ) */}
+              {rankDetails && (
+                <div className="space-y-3 text-left">
+                  {/* Hạng của Đội */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/40 dark:to-amber-950/40 border border-amber-300 dark:border-amber-800 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-stone-500 dark:text-stone-400 uppercase">
+                        Xếp Hạng Cánh Quân Của Bạn:
+                      </span>
+                      <span className="text-xs font-mono font-bold text-red-600 dark:text-amber-400">
+                        {rankDetails.teamScore} Điểm Đội
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-black text-stone-900 dark:text-white">
+                        {rankDetails.teamName} • Xe #{rankDetails.tankNumber}
+                      </h3>
+                      <span className="text-lg font-black text-red-600 dark:text-amber-400">
+                        HẠNG #{rankDetails.teamRank} <span className="text-xs text-stone-500">/ {rankDetails.totalTeams}</span>
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-600 dark:text-stone-300 italic">
+                      {rankDetails.teamRank === 1 
+                        ? '🎉 CHÚC MỪNG CÁNH QUÂN CỦA BẠN ĐÃ ĐOẠT CÚP VÔ ĐỊCH TOÀN THẮNG 1975!' 
+                        : `Cánh quân đã kiên cường xung kích tiến vào giải phóng Sài Gòn (Tiến độ ${rankDetails.teamProgress}%).`}
+                    </p>
+                  </div>
+
+                  {/* Vị trí trong Đội & Xét MVP */}
+                  <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#0c120e] border border-stone-200 dark:border-[#223025] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-stone-500 uppercase">
+                        Vị Trí Của Bạn Trong Đội:
+                      </span>
+                      {rankDetails.isTeamMvp && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 text-[10px] font-black uppercase animate-pulse">
+                          ⭐ MVP CÁNH QUÂN
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-stone-900 dark:text-white">
+                        {rankDetails.isTeamMvp 
+                          ? '🌟 XUẤT SẮC! BẠN LÀ MVP CỦA ĐỘI' 
+                          : `Chiến sĩ xếp thứ #${rankDetails.playerTeamRank} trong kíp lái`}
+                      </span>
+                      <span className="text-base font-black text-amber-600 dark:text-amber-400">
+                        #{rankDetails.playerTeamRank} <span className="text-xs text-stone-500">/ {rankDetails.teamMembersCount} chiến sĩ</span>
+                      </span>
+                    </div>
+
+                    <div className="pt-2 border-t border-stone-200 dark:border-[#1e2a21] flex items-center justify-between text-xs">
+                      <span className="text-stone-500">Hạng tổng thể toàn bộ chiến sĩ:</span>
+                      <strong className="font-mono text-stone-900 dark:text-white">
+                        Hạng #{rankDetails.overallRank} / {rankDetails.totalPlayers}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Bảng chỉ số cá nhân */}
+              <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#0c120e] border border-stone-200 dark:border-[#223025] grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <span className="text-[11px] text-stone-400 block">Điểm cá nhân</span>
+                  <span className="text-lg font-black text-amber-600 dark:text-amber-400">{currentPlayer?.score || 0}đ</span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-stone-400 block">Đúng / Tổng</span>
+                  <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                    {stats.correctCount} / {stats.totalAnswered}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-stone-400 block">Streak kỷ lục</span>
+                  <span className="text-lg font-black text-red-600 dark:text-red-400">
+                    {currentPlayer?.maxStreak || currentPlayer?.currentStreak || 0} 🔥
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <Link
+                  to="/"
+                  className="px-6 py-3 rounded-2xl bg-stone-900 hover:bg-black text-white dark:bg-stone-800 text-xs font-black uppercase tracking-wider"
+                >
+                  Xem Sa Bàn Toàn Cảnh
+                </Link>
+              </div>
+            </div>
+          );
+        })()
       ) : (
         /* =========================================================================
             MÀN HÌNH 2: TÁC CHIẾN THỜI GIAN THỰC (BATTLEFIELD)
@@ -805,10 +936,10 @@ export const PlayPage: React.FC = () => {
                 Bật <strong>[Lá chắn Trại Davis]</strong> ngay để xe không bị thụt lùi và kíp lái không bị choáng!
               </p>
               {/* Nút dùng khiên nhanh nếu trong túi đồ đang có sẵn */}
-              {currentPlayer?.inventory.some((i) => i.type === 'SHIELD') && (
+              {currentPlayer?.inventory.some((i) => i.type === 'DAVIS_SHIELD') && (
                 <button
                   onClick={() => {
-                    const shield = currentPlayer.inventory.find((i) => i.type === 'SHIELD');
+                    const shield = currentPlayer.inventory.find((i) => i.type === 'DAVIS_SHIELD');
                     if (shield) handleUseItem(shield);
                   }}
                   className="w-full py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-900 font-black text-xs uppercase tracking-wider shadow active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"

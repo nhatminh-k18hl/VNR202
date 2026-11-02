@@ -106,6 +106,8 @@ class GameSyncService {
           this.notifyListeners();
         } else if (event.data?.type === 'COUNTDOWN_TICK') {
           this.notifyCountdown(event.data.seconds);
+        } else if (event.data?.type === 'CLEAR_CLIENT_CACHE') {
+          this.handleClearLocalClientCache();
         }
       };
     }
@@ -127,6 +129,7 @@ class GameSyncService {
             parsed.currentEnemyAttack = parsed.currentEnemyAttack || null;
             parsed.supplyDraftPool = parsed.supplyDraftPool || [];
             parsed.discoveredEasterEggs = parsed.discoveredEasterEggs || [];
+            parsed.roomState.isLobbyOpen = parsed.roomState.isLobbyOpen ?? false;
             parsed.roomState.matchDurationSeconds = parsed.roomState.matchDurationSeconds || 300;
             parsed.roomState.timeRemainingSeconds = parsed.roomState.timeRemainingSeconds ?? 300;
             return parsed;
@@ -140,6 +143,7 @@ class GameSyncService {
     return {
       roomState: {
         phase: 'WAITING',
+        isLobbyOpen: false, // Mặc định chỉ khi Admin mở thì người chơi mới được vào chọn chiến hào
         isBotActive: false,
         firebaseDbUrl: this.cloudDbUrl,
         matchDurationSeconds: 300,
@@ -206,8 +210,23 @@ class GameSyncService {
   }
 
   // ==========================================
-  // P2P WEBRTC (PEERJS) REALTIME NETWORKING
+  // P2P WEBRTC (PEERJS) REALTIME NETWORKING VỚI GOOGLE STUN SERVERS
   // ==========================================
+  private pendingOutbox: any[] = [];
+
+  private getPeerConfig() {
+    return {
+      debug: 1,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+        ],
+      },
+    };
+  }
+
   public initHost(roomId = DEFAULT_HOST_ROOM_ID) {
     if (this.isHost && this.peer && !this.peer.destroyed) return;
     this.isHost = true;
@@ -218,7 +237,7 @@ class GameSyncService {
         this.peer.destroy();
       }
 
-      this.peer = new Peer(roomId, { debug: 1 });
+      this.peer = new Peer(roomId, this.getPeerConfig());
 
       this.peer.on('open', (id) => {
         console.log('[P2P Host] Sẵn sàng lắng nghe kết nối với Room ID:', id);
@@ -260,7 +279,6 @@ class GameSyncService {
   }
 
   public initClient(hostId = DEFAULT_HOST_ROOM_ID) {
-    if (this.isHost) return;
     this.networkMode = 'client';
 
     if (this.peer && !this.peer.destroyed && this.clientConnection?.open) return;
@@ -270,7 +288,7 @@ class GameSyncService {
         this.peer.destroy();
       }
 
-      this.peer = new Peer({ debug: 1 });
+      this.peer = new Peer(this.getPeerConfig());
 
       this.peer.on('open', () => {
         this.connectToHost(hostId);
@@ -294,6 +312,7 @@ class GameSyncService {
       conn.on('open', () => {
         this.isClientConnectedToHost = true;
         conn.send({ type: 'REQUEST_SYNC' });
+        this.flushPendingOutbox();
         this.notifyListeners();
       });
 
@@ -303,6 +322,8 @@ class GameSyncService {
           this.notifyListeners();
         } else if (msg?.type === 'COUNTDOWN_TICK') {
           this.notifyCountdown(msg.seconds);
+        } else if (msg?.type === 'CLEAR_CLIENT_CACHE') {
+          this.handleClearLocalClientCache();
         }
       });
 
@@ -320,6 +341,46 @@ class GameSyncService {
     } catch {
       // Ignored
     }
+  }
+
+  public sendClientAction(msg: any) {
+    if (this.networkMode === 'client') {
+      if (this.clientConnection && this.clientConnection.open) {
+        try {
+          this.clientConnection.send(msg);
+        } catch {
+          this.pendingOutbox.push(msg);
+        }
+      } else {
+        this.pendingOutbox.push(msg);
+      }
+    }
+  }
+
+  private flushPendingOutbox() {
+    if (!this.clientConnection || !this.clientConnection.open) return;
+    while (this.pendingOutbox.length > 0) {
+      const msg = this.pendingOutbox.shift();
+      try {
+        this.clientConnection.send(msg);
+      } catch (err) {
+        this.pendingOutbox.unshift(msg);
+        break;
+      }
+    }
+  }
+
+  private handleClearLocalClientCache() {
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.removeItem('than_toc_player_id');
+        localStorage.removeItem('than_toc_player_name');
+        localStorage.removeItem('than_toc_player_team');
+        localStorage.removeItem('than_toc_student_code');
+        localStorage.removeItem('than_toc_device_id');
+      }
+    } catch {}
+    this.notifyListeners();
   }
 
   private handleIncomingClientAction(data: any, conn: DataConnection) {
@@ -354,6 +415,13 @@ class GameSyncService {
         if (data.payload) {
           const { draftId, playerId } = data.payload;
           this.claimDraftItem(draftId, playerId);
+        }
+        break;
+
+      case 'PING':
+        if (data.playerId) {
+          const pl = this.state.players.find((p) => p.id === data.playerId);
+          if (pl) pl.lastActiveAt = Date.now();
         }
         break;
     }
@@ -594,10 +662,19 @@ class GameSyncService {
         }
       }
 
-      // 3. Mặc định tự động thả thính mỗi 30 giây (kích hoạt địch phản kích sau 15s nếu đạt mốc 25%)
+      // 3. Automation: Tự động thả thính mỗi 30 giây
       if (loopCounter % 30 === 0) {
         this.spawnSupplyDraftDrop(false);
         hasChanged = true;
+      }
+
+      // Automation: Boss/Địch tự động phản kích theo chu kỳ mỗi 38 giây (không phụ thuộc bấm tay)
+      if (loopCounter > 10 && loopCounter % 38 === 0 && !this.state.currentEnemyAttack) {
+        const timeSinceLast = Date.now() - (this.state.roomState.lastEnemyAttackAt || 0);
+        if (timeSinceLast >= 20000) {
+          this.triggerHistoricalEnemyAttack();
+          hasChanged = true;
+        }
       }
 
       // 4. Giải trừ hiệu ứng choáng váng hết hạn
@@ -751,20 +828,6 @@ class GameSyncService {
       'info'
     );
 
-    // Mặc định: sau 15s khi thính rơi tự động, nếu đạt mốc 25% thì địch sẽ phản kích
-    if (!isManual) {
-      setTimeout(() => {
-        if (this.state.roomState.phase !== 'BATTLE' || this.state.currentEnemyAttack) return;
-        const maxProgress = Math.max(...this.state.teams.map((t) => t.progress));
-        if (maxProgress >= 25) {
-          const timeSinceLast = Date.now() - (this.state.roomState.lastEnemyAttackAt || 0);
-          if (timeSinceLast >= 20000) {
-            this.triggerHistoricalEnemyAttack();
-          }
-        }
-      }, 15000);
-    }
-
     this.saveAndBroadcast();
   }
 
@@ -839,12 +902,10 @@ class GameSyncService {
     soundService.playBoost();
     this.saveAndBroadcast();
 
-    if (this.networkMode === 'client' && this.clientConnection?.open) {
-      this.clientConnection.send({
-        type: 'CLAIM_DRAFT',
-        payload: { draftId, playerId },
-      });
-    }
+    this.sendClientAction({
+      type: 'CLAIM_DRAFT',
+      payload: { draftId, playerId },
+    });
 
     return { success: true, message: `Bạn đã nhận [${draftItem.item.name}]!` };
   }
@@ -929,12 +990,10 @@ class GameSyncService {
 
     this.saveAndBroadcast();
 
-    if (this.networkMode === 'client' && this.clientConnection?.open) {
-      this.clientConnection.send({
-        type: 'ANSWER_QUESTION',
-        payload: { playerId, questionId, selectedAnswer, isCorrect },
-      });
-    }
+    this.sendClientAction({
+      type: 'ANSWER_QUESTION',
+      payload: { playerId, questionId, selectedAnswer, isCorrect },
+    });
 
     return { pointsEarned: points, streak: player.currentStreak, rolledItem };
   }
@@ -1126,12 +1185,10 @@ class GameSyncService {
 
     this.saveAndBroadcast();
 
-    if (this.networkMode === 'client' && this.clientConnection?.open) {
-      this.clientConnection.send({
-        type: 'USE_ITEM',
-        payload: { playerId, itemId, currentQuestion },
-      });
-    }
+    this.sendClientAction({
+      type: 'USE_ITEM',
+      payload: { playerId, itemId, currentQuestion },
+    });
 
     return true;
   }
@@ -1146,20 +1203,28 @@ class GameSyncService {
     teamId: TeamId;
     role?: string;
   }): PlayerState {
-    const existingIndex = this.state.players.findIndex((p) => p.id === playerData.id);
+    const cleanName = playerData.name.trim().toLowerCase();
+    const existingIndex = this.state.players.findIndex((p) => {
+      if (p.id === playerData.id) return true;
+      if (playerData.deviceId && p.deviceId && p.deviceId === playerData.deviceId) return true;
+      if (p.name.trim().toLowerCase() === cleanName) return true;
+      return false;
+    });
 
     const newPlayer: PlayerState = {
-      id: playerData.id,
+      id: existingIndex !== -1 ? this.state.players[existingIndex].id : playerData.id,
+      deviceId: playerData.deviceId,
       name: playerData.name.trim(),
       studentCode: playerData.studentCode?.trim(),
       teamId: playerData.teamId,
       role: playerData.role || 'Thành viên',
       score: existingIndex !== -1 ? this.state.players[existingIndex].score : 0,
-      currentStreak: 0,
+      currentStreak: existingIndex !== -1 ? this.state.players[existingIndex].currentStreak : 0,
       maxStreak: existingIndex !== -1 ? this.state.players[existingIndex].maxStreak : 0,
       correctCount: existingIndex !== -1 ? this.state.players[existingIndex].correctCount : 0,
       totalAnswered: existingIndex !== -1 ? this.state.players[existingIndex].totalAnswered : 0,
       inventory: existingIndex !== -1 ? this.state.players[existingIndex].inventory : [],
+      lastActiveAt: Date.now(),
     };
 
     if (existingIndex !== -1) {
@@ -1172,14 +1237,54 @@ class GameSyncService {
     this.updateTeamMemberCounts();
     this.saveAndBroadcast();
 
-    if (this.networkMode === 'client' && this.clientConnection?.open) {
-      this.clientConnection.send({
-        type: 'REGISTER_PLAYER',
-        payload: playerData,
-      });
-    }
+    this.sendClientAction({
+      type: 'REGISTER_PLAYER',
+      payload: playerData,
+    });
 
     return newPlayer;
+  }
+
+  public removePlayer(playerId: string) {
+    this.state.players = this.state.players.filter((p) => p.id !== playerId);
+    this.updateTeamMemberCounts();
+    this.saveAndBroadcast();
+  }
+
+  // Quản lý Mở / Khóa sảnh tuyển quân
+  public openLobby() {
+    this.state.roomState.isLobbyOpen = true;
+    this.addLiveEvent('⭐ Chỉ Huy Sở đã mở sảnh tuyển quân! Chiến sĩ có thể vào chọn chiến hào!', 'info');
+    this.saveAndBroadcast();
+  }
+
+  public closeLobby() {
+    this.state.roomState.isLobbyOpen = false;
+    this.addLiveEvent('🔒 Chỉ Huy Sở đã tạm đóng sảnh tuyển quân.', 'info');
+    this.saveAndBroadcast();
+  }
+
+  public toggleLobby(): boolean {
+    const next = !this.state.roomState.isLobbyOpen;
+    if (next) this.openLobby();
+    else this.closeLobby();
+    return next;
+  }
+
+  // Điều khiển trận đấu: Pause, Resume, Stop
+  public pauseGame() {
+    this.setPhase('PAUSED');
+    this.addLiveEvent('⏸️ Trận đấu đã tạm dừng theo lệnh Chỉ Huy Sở.', 'info');
+  }
+
+  public resumeGame() {
+    this.setPhase('BATTLE');
+    this.addLiveEvent('▶️ Trận đấu tiếp tục! Toàn quân xung kích!', 'progress');
+  }
+
+  public stopGame() {
+    if (this.state.roomState.phase === 'FINISHED') return;
+    this.endBattleByTimeout();
   }
 
   public setPhase(phase: GamePhase) {
@@ -1224,6 +1329,50 @@ class GameSyncService {
     this.saveAndBroadcast();
   }
 
+  public clearAllDataAndCache() {
+    this.state.roomState.phase = 'WAITING';
+    this.state.roomState.isLobbyOpen = false;
+    this.state.roomState.startedAt = undefined;
+    this.state.roomState.finishedAt = undefined;
+    this.state.roomState.winnerTeamId = null;
+    this.state.roomState.timeRemainingSeconds = 300;
+    this.state.roomState.countdownRemaining = null;
+    this.state.roomState.lastManualAirdropAt = undefined;
+    this.state.roomState.lastEnemyAttackAt = undefined;
+
+    this.state.currentEnemyAttack = null;
+    this.state.supplyDraftPool = [];
+    this.state.discoveredEasterEggs = [];
+
+    this.state.teams = JSON.parse(JSON.stringify(INITIAL_TEAMS_CONFIG));
+    this.state.players = [];
+
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.removeItem('than_toc_player_id');
+        localStorage.removeItem('than_toc_player_name');
+        localStorage.removeItem('than_toc_player_team');
+        localStorage.removeItem('than_toc_student_code');
+        localStorage.removeItem('than_toc_device_id');
+      }
+    } catch {}
+
+    if (this.channel) {
+      this.channel.postMessage({ type: 'CLEAR_CLIENT_CACHE' });
+    }
+
+    this.hostConnections.forEach((conn) => {
+      if (conn.open) {
+        try {
+          conn.send({ type: 'CLEAR_CLIENT_CACHE' });
+        } catch {}
+      }
+    });
+
+    this.addLiveEvent('🧹 Đã xóa sạch toàn bộ quân số và cache phòng đấu. Sẵn sàng cho ván mới!', 'info');
+    this.saveAndBroadcast();
+  }
+
   private triggerVictory(winnerTeamId: TeamId, heraldPlayerName?: string) {
     if (this.state.roomState.phase === 'FINISHED') return;
 
@@ -1248,12 +1397,15 @@ class GameSyncService {
     if (this.state.roomState.phase === 'FINISHED') return;
 
     const sortedTeams = [...this.state.teams].sort((a, b) => {
-      if (b.progress !== a.progress) return b.progress - a.progress;
-      return b.totalScore - a.totalScore;
+      if (a.progress >= 100 && b.progress < 100) return -1;
+      if (b.progress >= 100 && a.progress < 100) return 1;
+      // Điểm đội quyết định chiến thắng tổng quan
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      return b.progress - a.progress;
     });
 
     const winner = sortedTeams[0];
-    this.triggerVictory(winner.id, 'Hết 5 phút tác chiến');
+    this.triggerVictory(winner.id, 'Chỉ Huy Sở phát lệnh kết thúc trận');
   }
 
   // ==========================================
