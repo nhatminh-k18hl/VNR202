@@ -687,7 +687,7 @@ export const PlayPage: React.FC = () => {
                   required
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="VD: Nguyễn Văn An"
+                  placeholder="Nhập họ và tên..."
                   className="w-full px-4 py-3 rounded-2xl border border-stone-300 dark:border-[#2a3c2e] bg-stone-50 dark:bg-[#0c120e] text-stone-900 dark:text-white text-base font-semibold focus:outline-none focus:border-red-500 dark:focus:border-amber-400 transition-colors"
                 />
               </div>
@@ -702,7 +702,7 @@ export const PlayPage: React.FC = () => {
                   type="text"
                   value={studentCode}
                   onChange={(e) => setStudentCode(e.target.value)}
-                  placeholder="VD: HE170001"
+                  placeholder="Nhập mã số sinh viên (nếu có)..."
                   className="w-full px-4 py-2.5 rounded-2xl border border-stone-300 dark:border-[#2a3c2e] bg-stone-50 dark:bg-[#0c120e] text-stone-900 dark:text-white text-base font-semibold focus:outline-none focus:border-red-500 dark:focus:border-amber-400 transition-colors"
                 />
               </div>
@@ -1011,7 +1011,7 @@ export const PlayPage: React.FC = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="font-black text-stone-900 dark:text-white flex items-center gap-1.5 uppercase">
                   <Package className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-bounce" />
-                  Hộp Quà Tiếp Tế (Bấm trực tiếp vào hộp để nhận)
+                  Hộp Quà Tiếp Tế
                 </span>
                 <span className="text-[11px] text-stone-500">
                   Tối đa 1 món/loại

@@ -832,7 +832,7 @@ class GameSyncService {
   }
 
   /**
-   * Admin chủ động bấm thả thính (delay tối thiểu 10s giữa 2 lần)
+   * Admin chủ động bấm thả tiếp tế (delay tối thiểu 10s giữa 2 lần)
    */
   public manualDropSupplyDraft(): { success: boolean; message: string } {
     const now = Date.now();
@@ -841,7 +841,7 @@ class GameSyncService {
 
     if (now - lastTime < cooldown) {
       const remainingSeconds = Math.ceil((cooldown - (now - lastTime)) / 1000);
-      return { success: false, message: `Vui lòng chờ thêm ${remainingSeconds}s nữa trước khi thả thính tiếp!` };
+      return { success: false, message: `Vui lòng chờ thêm ${remainingSeconds}s nữa trước khi thả tiếp tế tiếp!` };
     }
 
     this.state.roomState.lastManualAirdropAt = now;

@@ -331,10 +331,10 @@ export const AdminPage: React.FC = () => {
     setTimeout(() => setNotice(null), 3000);
   };
 
-  // Admin bấm Thả Thính với cooldown 10s
+  // Admin bấm Thả Tiếp Tế với cooldown 10s
   const handleManualDropSupply = () => {
     if (airdropCooldownSeconds > 0) {
-      setNotice(`Vui lòng chờ thêm ${airdropCooldownSeconds}s nữa trước khi thả thính tiếp!`);
+      setNotice(`Vui lòng chờ thêm ${airdropCooldownSeconds}s nữa trước khi thả tiếp tế tiếp!`);
       setTimeout(() => setNotice(null), 2500);
       return;
     }
@@ -661,18 +661,14 @@ export const AdminPage: React.FC = () => {
                   <QRCodeSVG value={playUrl} size={190} level="M" />
                 </div>
               ) : (
-                <div className="relative p-3.5 bg-stone-100 dark:bg-stone-800/60 rounded-3xl inline-block shadow-inner border-2 border-dashed border-stone-300 dark:border-stone-700 select-none">
-                  <div className="opacity-15 filter blur-[1.5px] pointer-events-none">
-                    <QRCodeSVG value="https://thantoc1975.vn/#sanh-khoa" size={190} level="L" />
+                <div className="relative p-3.5 bg-stone-100 dark:bg-stone-800/60 rounded-3xl inline-block shadow-inner border-2 border-dashed border-stone-300 dark:border-stone-700 select-none overflow-hidden">
+                  <div className="opacity-25 filter blur-sm pointer-events-none">
+                    <QRCodeSVG value="https://thantoc1975.vn" size={190} level="L" />
                   </div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-stone-900/75 rounded-3xl text-white backdrop-blur-xs space-y-1">
-                    <Lock className="w-7 h-7 text-amber-400 animate-pulse" />
-                    <span className="text-xs font-black uppercase tracking-wider text-amber-300">
-                      Mã QR Tượng Trưng
-                    </span>
-                    <span className="text-[10px] text-stone-200 leading-tight">
-                      Bấm "Mở Tuyển Quân" bên trên để tải mã QR thật cho sinh viên quét
-                    </span>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/15 rounded-3xl">
+                    <div className="p-3 rounded-2xl bg-stone-900/80 border border-stone-700 text-amber-400 shadow-md">
+                      <Lock className="w-6 h-6" />
+                    </div>
                   </div>
                 </div>
               )}
@@ -1279,17 +1275,36 @@ export const AdminPage: React.FC = () => {
                 Mã QR Quét Tham Gia
               </h3>
               <p className="text-xs text-stone-500 dark:text-stone-400">
-                Mở camera quét để vào phòng chơi
+                {gameState.roomState.isLobbyOpen ? 'Mở camera quét để vào phòng chơi' : 'Sảnh tuyển quân chưa mở'}
               </p>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl inline-block shadow-inner border border-stone-200">
-              <QRCodeSVG value={playUrl} size={200} level="M" />
-            </div>
+            {gameState.roomState.isLobbyOpen ? (
+              <div className="p-4 bg-white rounded-2xl inline-block shadow-inner border border-stone-200">
+                <QRCodeSVG value={playUrl} size={200} level="M" />
+              </div>
+            ) : (
+              <div className="relative p-4 bg-stone-100 dark:bg-stone-800/60 rounded-2xl inline-block shadow-inner border-2 border-dashed border-stone-300 dark:border-stone-700 select-none overflow-hidden">
+                <div className="opacity-25 filter blur-sm pointer-events-none">
+                  <QRCodeSVG value="https://thantoc1975.vn" size={200} level="L" />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/15 rounded-2xl">
+                  <div className="p-3 rounded-2xl bg-stone-900/80 border border-stone-700 text-amber-400 shadow-md">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                </div>
+              </div>
+            )}
 
-            <div className="p-2.5 rounded-xl bg-stone-100 dark:bg-[#0c120e] text-stone-700 dark:text-stone-300 text-xs font-mono break-all select-all">
-              {playUrl}
-            </div>
+            {gameState.roomState.isLobbyOpen ? (
+              <div className="p-2.5 rounded-xl bg-stone-100 dark:bg-[#0c120e] text-stone-700 dark:text-stone-300 text-xs font-mono break-all select-all">
+                {playUrl}
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-xl bg-stone-100 dark:bg-[#0c120e] text-stone-400 text-xs italic">
+                Link phòng sẽ sẵn sàng khi bấm Mở Tuyển Quân
+              </div>
+            )}
 
             <button
               onClick={() => setShowQrModal(false)}
