@@ -619,7 +619,7 @@ export const AdminPage: React.FC = () => {
                   }`}
                 >
                   <Lock className="w-4 h-4" />
-                  <span>{gameState.roomState.isLobbyOpen ? 'Khóa Tuyển Quân' : 'Mở Tuyển Quân (Cho Chọn Đội)'}</span>
+                  <span>{gameState.roomState.isLobbyOpen ? 'Khóa Tuyển Quân' : 'Mở Tuyển Quân'}</span>
                 </button>
 
                 {/* NÚT BẮT ĐẦU TRẬN ĐẤU */}
@@ -646,35 +646,55 @@ export const AdminPage: React.FC = () => {
 
           {/* GRID 2 CỘT: CỘT TRÁI (QR CHIẾU LỚP & LINK) - CỘT PHẢI (DANH SÁCH 6 CÁNH QUÂN) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* CỘT TRÁI: MÃ QR CHIẾU LỚP */}
+            {/* CỘT TRÁI: MÃ QR THAM GIA */}
             <div className="lg:col-span-4 p-5 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-md flex flex-col items-center text-center space-y-4">
               <div className="space-y-1">
-                <span className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
-                  Mã QR Chiếu Máy Chiếu Cho Cả Lớp
-                </span>
                 <h3 className="text-base font-black uppercase text-stone-900 dark:text-white flex items-center justify-center gap-1.5">
-                  <Smartphone className="w-4 h-4 text-red-600 dark:text-amber-400" />
-                  Quét Bằng Camera Điện Thoại
+                  <QrCode className="w-4 h-4 text-red-600 dark:text-amber-400" />
+                  Mã QR Tham Gia
                 </h3>
               </div>
 
-              {/* KHUNG MÃ QR */}
-              <div className="p-3.5 bg-white rounded-3xl inline-block shadow-inner border-2 border-stone-200 dark:border-stone-700">
-                <QRCodeSVG value={playUrl} size={190} level="M" />
-              </div>
+              {/* KHUNG MÃ QR: CHỈ HIỂN THỊ MÃ THẬT KHI ĐÃ BẤM MỞ TUYỂN QUÂN */}
+              {gameState.roomState.isLobbyOpen ? (
+                <div className="p-3.5 bg-white rounded-3xl inline-block shadow-inner border-2 border-emerald-500 animate-in zoom-in-95 duration-200">
+                  <QRCodeSVG value={playUrl} size={190} level="M" />
+                </div>
+              ) : (
+                <div className="relative p-3.5 bg-stone-100 dark:bg-stone-800/60 rounded-3xl inline-block shadow-inner border-2 border-dashed border-stone-300 dark:border-stone-700 select-none">
+                  <div className="opacity-15 filter blur-[1.5px] pointer-events-none">
+                    <QRCodeSVG value="https://thantoc1975.vn/#sanh-khoa" size={190} level="L" />
+                  </div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-stone-900/75 rounded-3xl text-white backdrop-blur-xs space-y-1">
+                    <Lock className="w-7 h-7 text-amber-400 animate-pulse" />
+                    <span className="text-xs font-black uppercase tracking-wider text-amber-300">
+                      Mã QR Tượng Trưng
+                    </span>
+                    <span className="text-[10px] text-stone-200 leading-tight">
+                      Bấm "Mở Tuyển Quân" bên trên để tải mã QR thật cho sinh viên quét
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* MÃ PHÒNG & COPY LINK */}
               <div className="w-full space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-xl bg-stone-100 dark:bg-[#0c120e] border border-stone-200 dark:border-[#1e2a21] text-xs font-mono">
-                  <span className="truncate max-w-[190px] text-stone-600 dark:text-stone-300">{playUrl}</span>
-                  <button
-                    onClick={handleCopyLink}
-                    className="ml-2 px-2.5 py-1 rounded-lg bg-stone-900 dark:bg-stone-700 hover:bg-stone-800 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                  >
-                    {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedLink ? 'Đã chép' : 'Sao chép'}</span>
-                  </button>
-                </div>
+                {gameState.roomState.isLobbyOpen ? (
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-stone-100 dark:bg-[#0c120e] border border-stone-200 dark:border-[#1e2a21] text-xs font-mono">
+                    <span className="truncate max-w-[190px] text-stone-600 dark:text-stone-300">{playUrl}</span>
+                    <button
+                      onClick={handleCopyLink}
+                      className="ml-2 px-2.5 py-1 rounded-lg bg-stone-900 dark:bg-stone-700 hover:bg-stone-800 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedLink ? 'Đã chép' : 'Sao chép'}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-xl bg-stone-100 dark:bg-[#0c120e] border border-stone-200 dark:border-[#1e2a21] text-xs text-stone-400 italic text-center">
+                    Link phòng sẽ sẵn sàng khi bấm Mở Tuyển Quân
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between text-xs px-1 text-stone-500">
                   <span>Phòng thi đua: <strong className="font-mono text-red-600 dark:text-amber-400">#VNR1975</strong></span>
@@ -845,14 +865,14 @@ export const AdminPage: React.FC = () => {
                 </button>
               )}
 
-              {/* NÚT DỪNG TRẬN ĐẤU (STOP -> KẾT THÚC VÀ TÍNH ĐIỂM NGAY) */}
+              {/* NÚT DỪNG TRẬN ĐẤU */}
               {(gameState.roomState.phase === 'BATTLE' || gameState.roomState.phase === 'PAUSED') && (
                 <button
                   onClick={handleStopBattle}
                   className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-black text-xs uppercase flex items-center gap-1.5 shadow-md cursor-pointer"
                   title="Dừng trận đấu ngay lập tức và chuyển sang màn Bảng Vinh Danh"
                 >
-                  <Square className="w-3.5 h-3.5 fill-current" /> Dừng Trận Đấu (Stop)
+                  <Square className="w-3.5 h-3.5 fill-current" /> Dừng Trận Đấu
                 </button>
               )}
 
@@ -872,7 +892,7 @@ export const AdminPage: React.FC = () => {
                 <RotateCcw className="w-3.5 h-3.5" /> Cài Đặt Lại
               </button>
 
-              {/* GIA VỊ: ĐỊCH PHẢN KÍCH THỦ CÔNG */}
+              {/* ĐỊCH PHẢN KÍCH */}
               <button
                 onClick={handleManualTriggerEnemyAttack}
                 disabled={enemyAttackCooldownSeconds > 0}
@@ -881,15 +901,15 @@ export const AdminPage: React.FC = () => {
                     ? 'bg-stone-100 dark:bg-stone-800 text-stone-400 border-stone-300 dark:border-stone-700 cursor-not-allowed'
                     : 'bg-red-100 dark:bg-red-950/80 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-200'
                 }`}
-                title="Bổ sung thêm đòn bắn phá của địch (hệ thống vẫn tự động bắn định kỳ mỗi 38s)"
+                title="Kích hoạt địch bắn phá ngay lập tức"
               >
                 <Target className="w-3.5 h-3.5" />
                 <span>
-                  {enemyAttackCooldownSeconds > 0 ? `Địch Bắn (${enemyAttackCooldownSeconds}s)` : 'Địch Bắn (Thêm Gia Vị)'}
+                  {enemyAttackCooldownSeconds > 0 ? `Địch Phản Kích (${enemyAttackCooldownSeconds}s)` : 'Địch Phản Kích'}
                 </span>
               </button>
 
-              {/* GIA VỊ: THẢ TIẾP TẾ THỦ CÔNG */}
+              {/* THẢ TIẾP TẾ */}
               <button
                 onClick={handleManualDropSupply}
                 disabled={airdropCooldownSeconds > 0}
@@ -898,11 +918,11 @@ export const AdminPage: React.FC = () => {
                     ? 'bg-stone-100 dark:bg-stone-800 text-stone-400 border-stone-300 dark:border-stone-700 cursor-not-allowed'
                     : 'bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 hover:bg-amber-200'
                 }`}
-                title="Thả thêm hộp tiếp tế (hệ thống vẫn tự động thả hòm mỗi 30s)"
+                title="Thả hòm tiếp tế xuống sa bàn"
               >
                 <Package className="w-3.5 h-3.5" />
                 <span>
-                  {airdropCooldownSeconds > 0 ? `Thả Thính (${airdropCooldownSeconds}s)` : 'Thả Thính (Thêm Gia Vị)'}
+                  {airdropCooldownSeconds > 0 ? `Thả Tiếp Tế (${airdropCooldownSeconds}s)` : 'Thả Tiếp Tế'}
                 </span>
               </button>
             </div>
@@ -923,8 +943,6 @@ export const AdminPage: React.FC = () => {
                 {gameState.roomState.phase === 'WAITING' && '⏳ Sảnh Chờ'}
               </span>
               <span>Quân số: <strong className="text-stone-900 dark:text-white">{gameState.players.length}</strong></span>
-              <span>•</span>
-              <span className="hidden sm:inline text-stone-400 text-[11px]">Tự động thả thính 30s & địch bắn 38s</span>
             </div>
       </div>
 
@@ -1422,16 +1440,16 @@ export const AdminPage: React.FC = () => {
                 Bảng Vinh Danh Toàn Quân
               </h2>
               <p className="text-xs text-stone-500 dark:text-stone-400">
-                Điểm Đội quyết định chức Vô địch tổng quan • Điểm Cá Nhân xét MVP của từng Cánh Quân
+                Chiến dịch hoàn thành toàn thắng trưa 30/4/1975
               </p>
             </div>
 
-            {/* PHẦN 1: BẢNG XẾP HẠNG 6 CÁNH QUÂN (ĐIỂM ĐỘI & VỀ ĐÍCH) */}
+            {/* PHẦN 1: BẢNG XẾP HẠNG 6 CÁNH QUÂN */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-[#1e2a21]">
                 <h4 className="text-xs sm:text-sm font-black uppercase text-stone-900 dark:text-white flex items-center gap-1.5">
                   <Trophy className="w-4 h-4 text-amber-500" />
-                  1. Bảng Xếp Hạng 6 Cánh Quân (Quyết Định Vô Địch):
+                  1. Bảng Xếp Hạng 6 Cánh Quân:
                 </h4>
                 <span className="text-[11px] text-stone-500 dark:text-stone-400 font-bold">
                   {summaryStats.teamRankings.length} Đội tham chiến
@@ -1465,7 +1483,7 @@ export const AdminPage: React.FC = () => {
                             ? 'bg-amber-700 text-amber-100'
                             : 'bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
                         }`}>
-                          {isWinner ? '🏆 TOP #1 VÔ ĐỊCH' : `HẠNG #${rank}`}
+                          {isWinner ? '🏆 HẠNG #1' : `HẠNG #${rank}`}
                         </span>
                         <span className="text-xs font-mono font-black text-amber-600 dark:text-amber-400">
                           {t.totalScore}đ
@@ -1492,21 +1510,21 @@ export const AdminPage: React.FC = () => {
               </div>
             </div>
 
-            {/* PHẦN 2: VINH DANH MVP TỪNG CÁNH QUÂN (ĐIỂM CÁ NHÂN CAO NHẤT MỖI ĐỘI) */}
+            {/* PHẦN 2: VINH DANH MVP TỪNG CÁNH QUÂN */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-[#1e2a21]">
                 <h4 className="text-xs sm:text-sm font-black uppercase text-stone-900 dark:text-white flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-red-500" />
-                  2. Vinh Danh MVP Từng Cánh Quân (Điểm Cá Nhân Tối Cao Mỗi Đội):
+                  2. Vinh Danh MVP Từng Cánh Quân:
                 </h4>
               </div>
 
-              {/* MVP ĐỘI VÔ ĐỊCH NỔI BẬT */}
+              {/* MVP ĐỘI HẠNG 1 NỔI BẬT */}
               {summaryStats.winningTeam && (
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100/60 dark:from-amber-950/60 dark:via-[#161d15] dark:to-amber-950/40 border-2 border-amber-400 dark:border-amber-600 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
                   <div>
                     <span className="text-[10px] font-black uppercase text-amber-700 dark:text-amber-300 block">
-                      👑 MVP CÁNH QUÂN VÔ ĐỊCH: {summaryStats.winningTeam.name}
+                      👑 MVP {summaryStats.winningTeam.name}
                     </span>
                     <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white">
                       {summaryStats.winningTeamMvp ? summaryStats.winningTeamMvp.name : 'Chưa có chiến sĩ'}
@@ -1558,14 +1576,13 @@ export const AdminPage: React.FC = () => {
               </div>
             </div>
 
-            {/* PHẦN 3: TOP 10 CÁ NHÂN TOÀN QUÂN (MIX TẤT CẢ CÁC ĐỘI) */}
+            {/* PHẦN 3: BẢNG ĐIỂM CÁ NHÂN TOÀN QUÂN */}
             <div className="space-y-2">
               <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-[#1e2a21]">
                 <h4 className="text-xs sm:text-sm font-black uppercase text-stone-900 dark:text-white flex items-center gap-1.5">
                   <Zap className="w-4 h-4 text-emerald-500" />
-                  3. Bảng Điểm Cá Nhân Toàn Quân (Top 10 Sinh Viên Xuất Sắc Nhất Lớp):
+                  3. Bảng Điểm Cá Nhân Toàn Quân:
                 </h4>
-                <span className="text-[11px] text-stone-400">Mix toàn bộ các cánh quân</span>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-[#223025]">

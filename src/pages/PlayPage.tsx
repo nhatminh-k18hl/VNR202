@@ -185,9 +185,10 @@ export const PlayPage: React.FC = () => {
   // =========================================================================
   useEffect(() => {
     const isBattleStarted = gameState.roomState.phase === 'BATTLE';
+    const isFinished = gameState.roomState.phase === 'FINISHED';
     const isCountingDown = countdownVal !== null && countdownVal > 0;
 
-    if (isBattleStarted || isCountingDown) {
+    if (isBattleStarted || isCountingDown || isFinished) {
       // Nếu đã có thông tin cá nhân (trong state hoặc localStorage), ép vào trận lập tức
       const savedId = playerId || localStorage.getItem('than_toc_player_id');
       const savedName = playerName || localStorage.getItem('than_toc_player_name');
@@ -291,6 +292,13 @@ export const PlayPage: React.FC = () => {
       teamId: selectedTeamId,
     });
 
+    // Nếu vào trận khi trận đấu đã bắt đầu, chuẩn bị deck ngay để vào chiến trường lập tức
+    if (playerDeck.length === 0 && rawQuestions.length > 0) {
+      const shuffled = shuffleArray(rawQuestions);
+      setPlayerDeck(shuffled);
+      setDeckIndex(0);
+    }
+
     setIsJoined(true);
     soundService.playPlayerJoin();
   };
@@ -344,31 +352,22 @@ export const PlayPage: React.FC = () => {
     startExplanationTimer();
   }, [hasAnswered, currentQ, playerId]);
 
-  // Bộ đếm giải thích ngắn: bình thường nghỉ 1.8s (1.5 - 2s), câu cuối khi trận < 10s thì đếm nhanh 1s
+  // Chuyển câu nhanh 1s sau khi chọn đáp án (chỉ kiểm tra đúng/sai, không hiện giải thích dài dòng)
   const startExplanationTimer = () => {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
 
-    const currentRemaining = gameSyncService.getState().roomState.timeRemainingSeconds;
-    const isMatchNearEnd = currentRemaining > 0 && currentRemaining < 10;
-
-    // Bình thường nghỉ 1.8s (trong khoảng 1.5 - 2s), khi trận còn < 10s đếm nhanh 1s
-    const durationMs = isMatchNearEnd ? 1000 : 1800;
-    const initialCountdown = isMatchNearEnd ? 1 : 2;
-
-    setExplanationCountdown(initialCountdown);
+    const durationMs = 1000;
+    setExplanationCountdown(1);
 
     const startTime = Date.now();
     countdownTimerRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const remainingSec = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
-      setExplanationCountdown(remainingSec);
-
       if (elapsed >= durationMs) {
         clearInterval(countdownTimerRef.current);
         countdownTimerRef.current = null;
         handleNextQuestion();
       }
-    }, 150);
+    }, 100);
   };
 
   // =========================================================================
@@ -419,6 +418,7 @@ export const PlayPage: React.FC = () => {
   // Xác định cờ phase
   const isWaitingPhase = gameState.roomState.phase === 'WAITING';
   const isBattlePhase = gameState.roomState.phase === 'BATTLE';
+  const isPausedPhase = gameState.roomState.phase === 'PAUSED';
   const isEndedPhase = gameState.roomState.phase === 'FINISHED';
   const isCountingDown = countdownVal !== null && countdownVal > 0;
 
@@ -477,6 +477,28 @@ export const PlayPage: React.FC = () => {
             <div className="p-3 rounded-2xl bg-white/10 border border-white/20 text-xs text-amber-200 flex items-center justify-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: currentTeam?.color || '#2563EB' }} />
               <span>{currentTeam?.name} • Xe #{currentTeam?.tankNumber} đã sẵn sàng trong chiến hào!</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OVERLAY TẠM DỪNG TRẬN ĐẤU */}
+      {isPausedPhase && isJoined && (
+        <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center select-none animate-in fade-in duration-200">
+          <div className="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#131b15] border-2 border-amber-400 shadow-2xl space-y-4 text-stone-900 dark:text-white">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center text-3xl">
+              ⏸️
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
+                HIỆU LỆNH TẠM DỪNG
+              </span>
+              <h3 className="text-xl font-black uppercase">
+                Trận Đấu Đang Tạm Dừng
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                Hãy chú ý lên màn hình lớp học. Ban Quản Trò sẽ phát lệnh tiếp tục trong giây lát!
+              </p>
             </div>
           </div>
         </div>
@@ -1073,24 +1095,29 @@ export const PlayPage: React.FC = () => {
                   })}
                 </div>
 
-                {/* Khối Giải Thích Bối Cảnh Lịch Sử & Thời Gian Nghỉ (Không bỏ thời gian nghỉ) */}
+                {/* Thông báo kết quả nhanh sau khi bấm đáp án (không hiển thị giải thích dài dòng) */}
                 {hasAnswered && (
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-stone-50 dark:bg-[#0d140e] border border-stone-200 dark:border-[#223025] space-y-2 text-xs animate-fadeIn">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-                        <HelpCircle className="w-3.5 h-3.5 text-amber-500" /> Bối cảnh lịch sử 1975:
-                      </span>
-
-                      {explanationCountdown !== null && (
-                        <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                          Câu tiếp sau {explanationCountdown}s...
-                        </span>
+                  <div className={`p-3 rounded-2xl border text-xs flex items-center justify-between font-bold animate-fadeIn ${
+                    selectedAnswer === currentQ.correctAnswer
+                      ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-400 text-emerald-800 dark:text-emerald-200'
+                      : 'bg-red-50 dark:bg-red-950/70 border-red-400 text-red-800 dark:text-red-200'
+                  }`}>
+                    <span className="flex items-center gap-1.5">
+                      {selectedAnswer === currentQ.correctAnswer ? (
+                        <>
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          <span>Chính xác! (+Điểm)</span>
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4 text-red-600" />
+                          <span>Chưa chính xác!</span>
+                        </>
                       )}
-                    </div>
-
-                    <p className="text-stone-700 dark:text-stone-300 italic leading-relaxed">
-                      {currentQ.explanation}
-                    </p>
+                    </span>
+                    <span className="font-mono text-[11px] text-stone-500 dark:text-stone-400">
+                      Chuyển câu tiếp...
+                    </span>
                   </div>
                 )}
               </div>

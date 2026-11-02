@@ -723,10 +723,10 @@ class GameSyncService {
       historicalDetail: randomEvent.historicalDetail,
       targetTeamId: selectedTeam.id,
       targetTeamName: selectedTeam.name,
-      countdownSeconds: 3,
-      totalWarningSeconds: 3,
+      countdownSeconds: 5,
+      totalWarningSeconds: 5,
       initiatedAt: Date.now(),
-      strikesAt: Date.now() + 3000,
+      strikesAt: Date.now() + 5000,
       status: 'WARNING',
     };
 
