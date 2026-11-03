@@ -93,20 +93,18 @@ export interface PlayerPersonalRanking {
  */
 export function getPlayerRankingDetails(
   playerId: string,
-  players: PlayerState[] = [],
-  teams: TeamState[] = []
+  players: PlayerState[],
+  teams: TeamState[]
 ): PlayerPersonalRanking | null {
-  const safePlayers = Array.isArray(players) ? players : [];
-  const safeTeams = Array.isArray(teams) ? teams : [];
-  const player = safePlayers.find((p) => p.id === playerId);
+  const player = players.find((p) => p.id === playerId);
   if (!player) return null;
 
-  const rankedTeams = getTeamRankings(safeTeams);
+  const rankedTeams = getTeamRankings(teams);
   const teamIndex = rankedTeams.findIndex((t) => t.id === player.teamId);
   const teamRank = teamIndex !== -1 ? teamIndex + 1 : 1;
-  const team = safeTeams.find((t) => t.id === player.teamId);
+  const team = teams.find((t) => t.id === player.teamId);
 
-  const teamPlayers = safePlayers
+  const teamPlayers = players
     .filter((p) => p.teamId === player.teamId)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
@@ -118,7 +116,7 @@ export function getPlayerRankingDetails(
   const playerTeamRank = playerTeamIndex !== -1 ? playerTeamIndex + 1 : 1;
   const isTeamMvp = playerTeamRank === 1;
 
-  const overallPlayers = [...safePlayers].sort((a, b) => {
+  const overallPlayers = [...players].sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
     return b.maxStreak - a.maxStreak;
@@ -128,7 +126,7 @@ export function getPlayerRankingDetails(
 
   return {
     teamRank,
-    totalTeams: safeTeams.length,
+    totalTeams: teams.length,
     teamName: team?.name || '',
     corpsName: team?.corpsName || '',
     tankNumber: team?.tankNumber || '',
@@ -138,7 +136,7 @@ export function getPlayerRankingDetails(
     teamMembersCount: teamPlayers.length,
     isTeamMvp,
     overallRank,
-    totalPlayers: safePlayers.length,
+    totalPlayers: players.length,
     score: player.score,
     maxStreak: player.maxStreak,
     correctCount: player.correctCount,

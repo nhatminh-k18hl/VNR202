@@ -41,8 +41,8 @@ export const DEFAULT_HOST_ROOM_ID = 'thantoc_vnr1975';
 
 // Realtime Cloud PubSub Relay (ntfy.sh) - Đảm bảo đồng bộ tức thì <50ms xuyên mọi 4G & Wifi trường học
 const RELAY_BASE = 'https://ntfy.sh';
-const RELAY_ACTIONS_TOPIC = 'thantoc1975_act_v10';
-const RELAY_STATE_TOPIC = 'thantoc1975_state_v10';
+const RELAY_ACTIONS_TOPIC = 'thantoc1975_act_v7';
+const RELAY_STATE_TOPIC = 'thantoc1975_state_v7';
 
 class GameSyncService {
   private channel: BroadcastChannel | null = null;
@@ -141,7 +141,7 @@ class GameSyncService {
             parsed.currentEnemyAttack = parsed.currentEnemyAttack || null;
             parsed.supplyDraftPool = parsed.supplyDraftPool || [];
             parsed.discoveredEasterEggs = parsed.discoveredEasterEggs || [];
-            parsed.roomState.isLobbyOpen = true; // Sảnh tuyển quân luôn mở sẵn
+            parsed.roomState.isLobbyOpen = parsed.roomState.isLobbyOpen ?? false;
             parsed.roomState.matchDurationSeconds = parsed.roomState.matchDurationSeconds || 300;
             parsed.roomState.timeRemainingSeconds = parsed.roomState.timeRemainingSeconds ?? 300;
             return parsed;
@@ -155,7 +155,7 @@ class GameSyncService {
     return {
       roomState: {
         phase: 'WAITING',
-        isLobbyOpen: true, // Mặc định mở sảnh để người chơi vào được ngay
+        isLobbyOpen: false, // Mặc định chỉ khi Admin mở thì người chơi mới được vào chọn chiến hào
         isBotActive: false,
         firebaseDbUrl: this.cloudDbUrl,
         matchDurationSeconds: 300,
@@ -187,39 +187,30 @@ class GameSyncService {
     return JSON.parse(JSON.stringify(this.state));
   }
 
-  // Tách payload broadcast gọn nhẹ (< 2.5KB) không kèm ngân hàng 35 câu hỏi để đảm bảo ntfy.sh luôn gửi inline tức thì < 50ms
+  // Tách payload broadcast gọn nhẹ (< 3KB) không kèm ngân hàng 35 câu hỏi để không bị ntfy.sh biến thành file đính kèm
   private getBroadcastState(): FullGameState {
     const { customQuestions, ...rest } = this.state;
-    const trimmedLiveEvents = (rest.liveEvents || []).slice(0, 2);
+    const trimmedLiveEvents = (rest.liveEvents || []).slice(0, 10);
     return {
       ...rest,
       liveEvents: trimmedLiveEvents,
     } as FullGameState;
   }
 
-  // Cập nhật state an toàn khi nhận từ mạng, bảo toàn dữ liệu nếu bản tin gửi thiếu trường
-  private applyIncomingState(payload: Partial<FullGameState>) {
+  // Cập nhật state an toàn khi nhận từ mạng, giữ lại customQuestions nếu bản tin không gửi kèm
+  private applyIncomingState(payload: FullGameState) {
     if (!payload || !payload.roomState) return;
+    const existingQuestions = this.state.customQuestions;
     this.state = {
-      ...this.state,
       ...payload,
-      roomState: {
-        ...this.state.roomState,
-        ...payload.roomState,
-      },
-      teams: Array.isArray(payload.teams) && payload.teams.length > 0 ? payload.teams : this.state.teams,
-      players: Array.isArray(payload.players) ? payload.players : this.state.players,
-      liveEvents: Array.isArray(payload.liveEvents) ? payload.liveEvents : this.state.liveEvents,
-      supplyDraftPool: Array.isArray(payload.supplyDraftPool) ? payload.supplyDraftPool : this.state.supplyDraftPool,
-      discoveredEasterEggs: Array.isArray(payload.discoveredEasterEggs) ? payload.discoveredEasterEggs : this.state.discoveredEasterEggs,
-      customQuestions: Array.isArray(payload.customQuestions) && payload.customQuestions.length > 0
+      customQuestions: payload.customQuestions && payload.customQuestions.length > 0
         ? payload.customQuestions
-        : this.state.customQuestions,
+        : existingQuestions,
     };
     this.notifyListeners();
   }
 
-  private saveAndBroadcast(forceRelay: boolean = false) {
+  private saveAndBroadcast() {
     try {
       if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
@@ -249,10 +240,10 @@ class GameSyncService {
       }
     });
 
-    // Realtime Cloud Relay (ntfy.sh) - Đẩy trực tiếp tới toàn bộ điện thoại sinh viên không độ trễ (<2.5KB)
+    // Realtime Cloud Relay (ntfy.sh) - Đẩy trực tiếp tới toàn bộ điện thoại sinh viên không độ trễ (<3KB để không bị biến thành file)
     if (this.isHost || this.networkMode === 'host') {
       const now = Date.now();
-      if (forceRelay || now - this.lastRelayBroadcastAt > 80) {
+      if (now - this.lastRelayBroadcastAt > 80) {
         this.lastRelayBroadcastAt = now;
         try {
           fetch(`${RELAY_BASE}/${RELAY_STATE_TOPIC}`, {
@@ -487,8 +478,8 @@ class GameSyncService {
     };
 
     try {
-      // 1. Lắng nghe SSE thời gian thực từ kênh mới nhất
-      this.clientEventSource = new EventSource(`${RELAY_BASE}/${RELAY_STATE_TOPIC}/sse`);
+      // 1. Lắng nghe SSE với since=10m để nhận ngay thông điệp mở sảnh gần nhất mà không bị mất gói tin
+      this.clientEventSource = new EventSource(`${RELAY_BASE}/${RELAY_STATE_TOPIC}/sse?since=10m`);
       this.clientEventSource.onmessage = (event) => {
         try {
           const raw = JSON.parse(event.data);
@@ -678,12 +669,6 @@ class GameSyncService {
   private notifyCountdown(seconds: number) {
     this.state.roomState.countdownRemaining = seconds > 0 ? seconds : null;
     soundService.playCountdownTick(seconds === 0);
-    if (seconds === 0) {
-      this.state.roomState.phase = 'BATTLE';
-      this.state.roomState.startedAt = this.state.roomState.startedAt || Date.now();
-      this.state.roomState.timeRemainingSeconds = this.state.roomState.timeRemainingSeconds || 300;
-      this.notifyListeners();
-    }
     this.countdownListeners.forEach((l) => {
       try {
         l(seconds);
@@ -691,14 +676,6 @@ class GameSyncService {
         // Ignored
       }
     });
-  }
-
-  public startSoloBattle() {
-    this.state.roomState.phase = 'BATTLE';
-    this.state.roomState.startedAt = Date.now();
-    this.state.roomState.timeRemainingSeconds = this.state.roomState.matchDurationSeconds || 300;
-    this.notifyListeners();
-    this.saveAndBroadcast(true);
   }
 
   public startBattleWithCountdown(countdownSeconds: number = 3, onComplete?: () => void) {
@@ -1548,13 +1525,13 @@ class GameSyncService {
   public openLobby() {
     this.state.roomState.isLobbyOpen = true;
     this.addLiveEvent('⭐ Chỉ Huy Sở đã mở sảnh tuyển quân! Chiến sĩ có thể vào chọn chiến hào!', 'info');
-    this.saveAndBroadcast(true);
+    this.saveAndBroadcast();
   }
 
   public closeLobby() {
     this.state.roomState.isLobbyOpen = false;
     this.addLiveEvent('🔒 Chỉ Huy Sở đã tạm đóng sảnh tuyển quân.', 'info');
-    this.saveAndBroadcast(true);
+    this.saveAndBroadcast();
   }
 
   public toggleLobby(): boolean {
@@ -1587,7 +1564,7 @@ class GameSyncService {
       this.state.roomState.timeRemainingSeconds = this.state.roomState.matchDurationSeconds || 300;
       this.addLiveEvent('🚀 HIỆU LỆNH TỔNG TIẾN CÔNG! Các cánh quân đồng loạt xuất kích!', 'progress');
     }
-    this.saveAndBroadcast(true);
+    this.saveAndBroadcast();
   }
 
   public resetGame() {
@@ -1619,7 +1596,7 @@ class GameSyncService {
 
     this.updateTeamMemberCounts();
     this.addLiveEvent('🔄 Chỉ Huy Sở đã cài đặt lại toàn bộ sa bàn chiến trường.', 'info');
-    this.saveAndBroadcast(true);
+    this.saveAndBroadcast();
   }
 
   public clearAllDataAndCache() {

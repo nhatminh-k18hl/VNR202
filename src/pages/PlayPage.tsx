@@ -17,8 +17,7 @@ import {
   Users,
   Trophy,
   Sparkles,
-  RotateCcw,
-  Play
+  RotateCcw
 } from 'lucide-react';
 import { AnswerKey, BoostItem, PlayerState, Question, TeamId, TeamState } from '../types/game';
 import { INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
@@ -114,16 +113,18 @@ export const PlayPage: React.FC = () => {
     const urlParams = new URLSearchParams(queryString);
     const searchParams = new URLSearchParams(window.location.search);
     const hostId = urlParams.get('host') || searchParams.get('host') || undefined;
+    const isOpenFromUrl = urlParams.get('open') === '1' || searchParams.get('open') === '1' || urlParams.get('lobby') === 'open' || searchParams.get('lobby') === 'open';
 
-    // Luôn mở sảnh tuyển quân mặc định để người chơi vào được ngay lập tức
-    gameSyncService.initClient(hostId, { isLobbyOpen: true });
-    setGameState((prev) => ({
-      ...prev,
-      roomState: {
-        ...prev.roomState,
-        isLobbyOpen: true,
-      },
-    }));
+    gameSyncService.initClient(hostId, { isLobbyOpen: isOpenFromUrl });
+    if (isOpenFromUrl) {
+      setGameState((prev) => ({
+        ...prev,
+        roomState: {
+          ...prev.roomState,
+          isLobbyOpen: true,
+        },
+      }));
+    }
   }, []);
 
   // Tự động kiểm tra trạng thái mở tuyển quân mỗi 2.5s khi đang ở màn hình chờ
@@ -198,21 +199,6 @@ export const PlayPage: React.FC = () => {
         if ('vibrate' in navigator) {
           navigator.vibrate([150, 80, 200]);
         }
-        // TỰ ĐỘNG CHUYỂN SANG BATTLE LẬP TỨC KHÔNG CHỜ GÓI TIN MẠNG
-        setGameState((prev) => ({
-          ...prev,
-          roomState: {
-            ...prev.roomState,
-            phase: 'BATTLE',
-            startedAt: prev.roomState.startedAt || Date.now(),
-            timeRemainingSeconds: prev.roomState.timeRemainingSeconds || 300,
-          },
-        }));
-        if (playerDeck.length === 0) {
-          const qs = rawQuestions.length > 0 ? rawQuestions : BUILTIN_QUESTIONS;
-          setPlayerDeck(generateNextRound(qs));
-          setDeckIndex(0);
-        }
       }
     });
 
@@ -220,7 +206,7 @@ export const PlayPage: React.FC = () => {
       unsubscribeState();
       unsubscribeCountdown();
     };
-  }, [playerDeck.length, rawQuestions]);
+  }, []);
 
   // 4. Tải câu hỏi mặc định từ questions.md nếu chưa có
   useEffect(() => {
@@ -292,14 +278,14 @@ export const PlayPage: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [gameState.roomState.phase, isJoined]);
 
-  const currentPlayer: PlayerState | undefined = (gameState.players || []).find((p) => p.id === playerId);
-  const currentTeam: TeamState | undefined = (gameState.teams || []).find((t) => t.id === (currentPlayer?.teamId || selectedTeamId));
+  const currentPlayer: PlayerState | undefined = gameState.players.find((p) => p.id === playerId);
+  const currentTeam: TeamState | undefined = gameState.teams.find((t) => t.id === (currentPlayer?.teamId || selectedTeamId));
 
   // Kiểm tra xe của đội mình có đang bị địch ngắm bắn pháo không
   const isTeamUnderAttack = gameState.currentEnemyAttack?.targetTeamId === currentTeam?.id && gameState.currentEnemyAttack?.status === 'WARNING';
 
-  // Câu hỏi hiện tại lấy từ deck đã xáo trộn, dự phòng BUILTIN_QUESTIONS chống undefined
-  const currentQ: Question | undefined = playerDeck[deckIndex] || BUILTIN_QUESTIONS[deckIndex % BUILTIN_QUESTIONS.length] || BUILTIN_QUESTIONS[0];
+  // Câu hỏi hiện tại lấy từ deck đã xáo trộn
+  const currentQ: Question | undefined = playerDeck[deckIndex];
 
   // Xáo trộn ngẫu nhiên thứ tự 4 đáp án cho từng câu hỏi để chống spam phím/nút (tránh spam full C)
   // Giữ cố định thứ tự trong suốt thời gian hiển thị câu hỏi đó
@@ -379,27 +365,6 @@ export const PlayPage: React.FC = () => {
 
     setIsJoined(true);
     soundService.playPlayerJoin();
-  };
-
-  // Bắt đầu tác chiến ngay lập tức (chơi tự do / solo / luyện tập không chờ quản trò)
-  const handleStartSoloBattle = () => {
-    gameSyncService.startSoloBattle();
-    setGameState((prev) => ({
-      ...prev,
-      roomState: {
-        ...prev.roomState,
-        phase: 'BATTLE',
-        startedAt: Date.now(),
-        timeRemainingSeconds: prev.roomState.matchDurationSeconds || 300,
-      },
-    }));
-    if (playerDeck.length === 0) {
-      const qs = rawQuestions.length > 0 ? rawQuestions : BUILTIN_QUESTIONS;
-      setPlayerDeck(generateNextRound(qs));
-      setDeckIndex(0);
-    }
-    soundService.playBattleStart();
-    showToast('🚀 Đã xuất kích tác chiến! Chúc bạn trả lời chính xác!', 'success');
   };
 
   // Hết thời gian 18s cho 1 câu
@@ -484,10 +449,11 @@ export const PlayPage: React.FC = () => {
     // Nếu chuẩn bị vượt quá số câu hiện có (đã đi hết 1 vòng), tạo thêm 1 vòng mới hoàn chỉnh
     // Đảm bảo câu đầu tiên của vòng mới không trùng với câu cuối của vòng trước
     if (nextIndex >= playerDeck.length) {
-      const questions = rawQuestions.length > 0 ? rawQuestions : BUILTIN_QUESTIONS;
-      const lastQ = playerDeck[playerDeck.length - 1];
-      const nextRound = generateNextRound(questions, lastQ?.id);
-      setPlayerDeck((prev) => [...prev, ...nextRound]);
+      if (rawQuestions.length > 0) {
+        const lastQ = playerDeck[playerDeck.length - 1];
+        const nextRound = generateNextRound(rawQuestions, lastQ?.id);
+        setPlayerDeck((prev) => [...prev, ...nextRound]);
+      }
     }
 
     setDeckIndex(nextIndex);
@@ -718,20 +684,12 @@ export const PlayPage: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
               <span>Đang kết nối thời gian thực với phòng tác chiến...</span>
             </div>
-            <div className="pt-1 flex flex-col sm:flex-row gap-2 justify-center">
-              <button
-                type="button"
-                onClick={() => setGameState((prev) => ({ ...prev, roomState: { ...prev.roomState, isLobbyOpen: true } }))}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all active:scale-95"
-              >
-                <Zap className="w-3.5 h-3.5 fill-white" />
-                <span>Ghi Danh Sẵn Sàng Ngay</span>
-              </button>
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={handleManualCheckLobby}
                 disabled={isCheckingLobby}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-stone-200 dark:bg-stone-800 text-stone-800 dark:text-stone-200 font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all active:scale-95 disabled:opacity-75"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold text-xs flex items-center justify-center gap-2 mx-auto shadow-md cursor-pointer transition-all active:scale-95 disabled:opacity-75"
               >
                 <RotateCcw className={`w-3.5 h-3.5 ${isCheckingLobby ? 'animate-spin' : ''}`} />
                 <span>{isCheckingLobby ? 'Đang kiểm tra...' : 'Kiểm tra sảnh đã mở chưa'}</span>
@@ -863,31 +821,12 @@ export const PlayPage: React.FC = () => {
             </p>
           </div>
 
-          {/* NÚT XUẤT KÍCH NGAY DÀNH CHO NGƯỜI CHƠI TỰ DO HOẶC VÀO TRẬN TRỰC TIẾP */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 border-2 border-dashed border-red-500/40 dark:border-amber-500/40 space-y-2.5 text-center">
-            <div className="flex items-center justify-center gap-2 text-xs font-bold text-red-600 dark:text-amber-400">
-              <Sparkles className="w-4 h-4 animate-spin" />
-              <span>Chế độ: Đua Thi Đấu Toàn Lớp hoặc Tự Luyện Tập Solo</span>
-            </div>
-            <p className="text-xs text-stone-600 dark:text-stone-300">
-              Nếu bạn muốn tác chiến ngay hoặc đang tự kiểm tra trên điện thoại, hãy bấm nút dưới đây để vào thẳng ngân hàng câu hỏi:
-            </p>
-            <button
-              type="button"
-              onClick={handleStartSoloBattle}
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-red-600/30 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Play className="w-4 h-4 fill-white" />
-              <span>BẮT ĐẦU TÁC CHIẾN NGAY (VÀO CÂU HỎI LUÔN)</span>
-            </button>
-          </div>
-
           {/* Danh sách thành viên trong nhóm đã join sảnh */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs pb-1 border-b border-stone-100 dark:border-[#1e2a21]">
               <span className="font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-stone-500" />
-                Đồng đội trong cánh quân ({(gameState.players || []).filter((p) => p.teamId === currentTeam?.id).length}):
+                Đồng đội trong cánh quân ({gameState.players.filter((p) => p.teamId === currentTeam?.id).length}):
               </span>
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
@@ -896,7 +835,7 @@ export const PlayPage: React.FC = () => {
             </div>
 
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {(gameState.players || [])
+              {gameState.players
                 .filter((p) => p.teamId === currentTeam?.id)
                 .map((member, idx) => (
                   <div
@@ -960,7 +899,7 @@ export const PlayPage: React.FC = () => {
             ========================================================================= */
         (() => {
           const rankDetails = playerId
-            ? getPlayerRankingDetails(playerId, gameState.players || [], gameState.teams || [])
+            ? getPlayerRankingDetails(playerId, gameState.players, gameState.teams)
             : null;
 
           return (
@@ -1111,7 +1050,7 @@ export const PlayPage: React.FC = () => {
           )}
 
           {/* HỘP TIẾP TẾ THẢ DÙ (AIRDROP) - BẤM TRỰC TIẾP VÀO HỘP ĐỂ NHẬN (KHÔNG CÓ NÚT NHẶT NGAY) */}
-          {(gameState.supplyDraftPool || []).length > 0 && (
+          {gameState.supplyDraftPool.length > 0 && (
             <div className="p-3 sm:p-4 rounded-2xl bg-amber-50 dark:bg-[#1a231b] border-2 border-dashed border-amber-400 dark:border-amber-600 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-black text-stone-900 dark:text-white flex items-center gap-1.5 uppercase">
@@ -1125,7 +1064,7 @@ export const PlayPage: React.FC = () => {
 
               {/* Hộp quà tiếp tế: Click trực tiếp vào hộp quà để nhận */}
               <div className="grid grid-cols-1 gap-2">
-                {(gameState.supplyDraftPool || []).map((draft) => (
+                {gameState.supplyDraftPool.map((draft) => (
                   <button
                     key={draft.id}
                     onClick={() => handleClaimDraftBox(draft.id)}
@@ -1281,16 +1220,16 @@ export const PlayPage: React.FC = () => {
           <div className="p-3.5 sm:p-5 rounded-3xl bg-white dark:bg-[#131b15] border border-stone-200 dark:border-[#223025] shadow-sm space-y-2.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-black uppercase text-stone-900 dark:text-white flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-amber-500" /> Túi Đồ Tác Chiến ({(currentPlayer?.inventory || []).length}/1)
+                <Shield className="w-4 h-4 text-amber-500" /> Túi Đồ Tác Chiến ({currentPlayer?.inventory.length || 0}/1)
               </span>
               <span className="text-[11px] text-stone-400">
-                {(currentPlayer?.inventory || []).length > 0 ? 'Chạm để dùng ngay' : 'Tối đa 1 món'}
+                {currentPlayer?.inventory && currentPlayer.inventory.length > 0 ? 'Chạm để dùng ngay' : 'Tối đa 1 món'}
               </span>
             </div>
 
-            {currentPlayer && (currentPlayer.inventory || []).length > 0 ? (
+            {currentPlayer && currentPlayer.inventory.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(currentPlayer.inventory || []).map((item) => (
+                {currentPlayer.inventory.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => handleUseItem(item)}
