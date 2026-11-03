@@ -388,14 +388,7 @@ export const AdminPage: React.FC = () => {
   };
 
   const currentHostId = gameSyncService.getHostPeerId();
-  // Đảm bảo pathname chuẩn xác (có dấu gạch chéo cuối nếu là thư mục) để mobile browser không bị redirect 301 làm mất hash query
-  const normalizedPath = window.location.pathname.endsWith('/') 
-    ? window.location.pathname 
-    : window.location.pathname.includes('.') 
-      ? window.location.pathname 
-      : `${window.location.pathname}/`;
-  // Khi sảnh đang mở tuyển quân, gán cờ &open=1 vào link để điện thoại quét QR lập tức vào thẳng form đăng ký
-  const playUrl = `${window.location.origin}${normalizedPath}#/play?host=${encodeURIComponent(currentHostId)}${gameState.roomState.isLobbyOpen ? '&open=1' : ''}`;
+  const playUrl = `${window.location.origin}${window.location.pathname}#/play?host=${encodeURIComponent(currentHostId)}`;
 
   if (!isAuthenticated) {
     return (
@@ -663,36 +656,42 @@ export const AdminPage: React.FC = () => {
                 </h3>
               </div>
 
-              {/* KHUNG MÃ QR: LUÔN HIỂN THỊ MÃ THẬT ĐỂ SINH VIÊN QUÉT BẤT KỲ LÚC NÀO */}
-              <div className={`p-3.5 bg-white rounded-3xl inline-block shadow-inner border-2 transition-all duration-300 ${
-                gameState.roomState.isLobbyOpen
-                  ? 'border-emerald-500 shadow-emerald-500/20 shadow-lg animate-in zoom-in-95'
-                  : 'border-amber-400/80 shadow-amber-500/10'
-              }`}>
-                <QRCodeSVG value={playUrl} size={190} level="M" />
-              </div>
+              {/* KHUNG MÃ QR: CHỈ HIỂN THỊ MÃ THẬT KHI ĐÃ BẤM MỞ TUYỂN QUÂN */}
+              {gameState.roomState.isLobbyOpen ? (
+                <div className="p-3.5 bg-white rounded-3xl inline-block shadow-inner border-2 border-emerald-500 animate-in zoom-in-95 duration-200">
+                  <QRCodeSVG value={playUrl} size={190} level="M" />
+                </div>
+              ) : (
+                <div className="relative p-3.5 bg-stone-100 dark:bg-stone-800/60 rounded-3xl inline-block shadow-inner border-2 border-dashed border-stone-300 dark:border-stone-700 select-none overflow-hidden">
+                  <div className="opacity-25 filter blur-sm pointer-events-none">
+                    <QRCodeSVG value="https://thantoc1975.vn" size={190} level="L" />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/15 rounded-3xl">
+                    <div className="p-3 rounded-2xl bg-stone-900/80 border border-stone-700 text-amber-400 shadow-md">
+                      <Lock className="w-6 h-6" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              {/* TRẠNG THÁI MÃ QR & LINK PHÒNG CHO SINH VIÊN */}
+              {/* MÃ PHÒNG & COPY LINK */}
               <div className="w-full space-y-2">
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
-                  gameState.roomState.isLobbyOpen 
-                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 animate-pulse'
-                    : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${gameState.roomState.isLobbyOpen ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                  <span>{gameState.roomState.isLobbyOpen ? 'SẢNH ĐANG MỞ • QUÉT VÀO NGAY' : 'CHỜ MỞ TUYỂN QUÂN • QUÉT CHỜ LỆNH'}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded-xl bg-stone-100 dark:bg-[#0c120e] border border-stone-200 dark:border-[#1e2a21] text-xs font-mono">
-                  <span className="truncate max-w-[190px] text-stone-600 dark:text-stone-300" title={playUrl}>{playUrl}</span>
-                  <button
-                    onClick={handleCopyLink}
-                    className="ml-2 px-2.5 py-1 rounded-lg bg-stone-900 dark:bg-stone-700 hover:bg-stone-800 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                  >
-                    {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedLink ? 'Đã chép' : 'Sao chép'}</span>
-                  </button>
-                </div>
+                {gameState.roomState.isLobbyOpen ? (
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-stone-100 dark:bg-[#0c120e] border border-stone-200 dark:border-[#1e2a21] text-xs font-mono">
+                    <span className="truncate max-w-[190px] text-stone-600 dark:text-stone-300">{playUrl}</span>
+                    <button
+                      onClick={handleCopyLink}
+                      className="ml-2 px-2.5 py-1 rounded-lg bg-stone-900 dark:bg-stone-700 hover:bg-stone-800 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedLink ? 'Đã chép' : 'Sao chép'}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-xl bg-stone-100 dark:bg-[#0c120e] border border-stone-200 dark:border-[#1e2a21] text-xs text-stone-400 italic text-center">
+                    Link phòng sẽ sẵn sàng khi bấm Mở Tuyển Quân
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between text-xs px-1 text-stone-500">
                   <span>Phòng thi đua: <strong className="font-mono text-red-600 dark:text-amber-400">#VNR1975</strong></span>
@@ -1277,37 +1276,43 @@ export const AdminPage: React.FC = () => {
                 Mã QR Quét Tham Gia
               </h3>
               <p className="text-xs text-stone-500 dark:text-stone-400">
-                {gameState.roomState.isLobbyOpen 
-                  ? 'Mở camera quét để vào chọn chiến hào ngay' 
-                  : 'Sảnh đang chờ lệnh - Sinh viên quét trước để vào sảnh chờ'}
+                {gameState.roomState.isLobbyOpen ? 'Mở camera quét để vào phòng chơi' : 'Sảnh tuyển quân chưa mở'}
               </p>
             </div>
 
-            <div className={`p-4 bg-white rounded-2xl inline-block shadow-inner border-2 transition-all ${
-              gameState.roomState.isLobbyOpen ? 'border-emerald-500 shadow-lg shadow-emerald-500/20' : 'border-amber-400'
-            }`}>
-              <QRCodeSVG value={playUrl} size={200} level="M" />
-            </div>
+            {gameState.roomState.isLobbyOpen ? (
+              <div className="p-4 bg-white rounded-2xl inline-block shadow-inner border border-stone-200">
+                <QRCodeSVG value={playUrl} size={200} level="M" />
+              </div>
+            ) : (
+              <div className="relative p-4 bg-stone-100 dark:bg-stone-800/60 rounded-2xl inline-block shadow-inner border-2 border-dashed border-stone-300 dark:border-stone-700 select-none overflow-hidden">
+                <div className="opacity-25 filter blur-sm pointer-events-none">
+                  <QRCodeSVG value="https://thantoc1975.vn" size={200} level="L" />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/15 rounded-2xl">
+                  <div className="p-3 rounded-2xl bg-stone-900/80 border border-stone-700 text-amber-400 shadow-md">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                </div>
+              </div>
+            )}
 
-            <div className="p-2.5 rounded-xl bg-stone-100 dark:bg-[#0c120e] text-stone-700 dark:text-stone-300 text-xs font-mono break-all select-all">
-              {playUrl}
-            </div>
+            {gameState.roomState.isLobbyOpen ? (
+              <div className="p-2.5 rounded-xl bg-stone-100 dark:bg-[#0c120e] text-stone-700 dark:text-stone-300 text-xs font-mono break-all select-all">
+                {playUrl}
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-xl bg-stone-100 dark:bg-[#0c120e] text-stone-400 text-xs italic">
+                Link phòng sẽ sẵn sàng khi bấm Mở Tuyển Quân
+              </div>
+            )}
 
-            <div className="flex gap-2">
-              <button
-                onClick={handleCopyLink}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-              >
-                {copiedLink ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4" />}
-                <span>{copiedLink ? 'Đã sao chép link' : 'Sao chép link'}</span>
-              </button>
-              <button
-                onClick={() => setShowQrModal(false)}
-                className="py-2.5 px-4 rounded-xl bg-stone-900 dark:bg-stone-700 text-white font-bold text-xs cursor-pointer"
-              >
-                Đóng
-              </button>
-            </div>
+            <button
+              onClick={() => setShowQrModal(false)}
+              className="w-full py-2.5 rounded-xl bg-stone-900 dark:bg-stone-700 text-white font-bold text-xs cursor-pointer"
+            >
+              Đóng Cửa Sổ QR
+            </button>
           </div>
         </div>
       )}

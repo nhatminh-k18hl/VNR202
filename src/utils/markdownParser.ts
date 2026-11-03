@@ -4,7 +4,6 @@
  */
 
 import { AnswerKey, Question, QuestionOptions } from '../types/game';
-import { DEFAULT_QUESTIONS_MARKDOWN } from '../config/defaultQuestions';
 
 /**
  * Phân tích chuỗi văn bản Markdown chứa danh sách câu hỏi thành mảng Question[]
@@ -161,9 +160,6 @@ export async function fetchAndParseQuestions(relativeUrl: string = './questions.
     return parsedQuestions;
   } catch (error) {
     console.error(`[markdownParser] Lỗi tải questions.md từ "${relativeUrl}":`, error);
-    return BUILTIN_QUESTIONS;
+    throw error;
   }
 }
-
-// Ngân hàng 35 câu hỏi mặc định được nhúng sẵn vào bundle mã nguồn để đảm bảo chạy mượt 100% offline không cần fetch
-export const BUILTIN_QUESTIONS: Question[] = parseQuestionsMarkdown(DEFAULT_QUESTIONS_MARKDOWN);

@@ -112,8 +112,9 @@ class GameSyncService {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       this.channel = new BroadcastChannel('than_toc_1975_channel_v3');
       this.channel.onmessage = (event) => {
-        if (event.data?.type === 'SYNC_STATE' && event.data.payload) {
-          this.applyIncomingState(event.data.payload);
+        if (event.data?.type === 'SYNC_STATE') {
+          this.state = event.data.payload;
+          this.notifyListeners();
         } else if (event.data?.type === 'COUNTDOWN_TICK') {
           this.notifyCountdown(event.data.seconds);
         } else if (event.data?.type === 'CLEAR_CLIENT_CACHE') {
@@ -187,29 +188,6 @@ class GameSyncService {
     return JSON.parse(JSON.stringify(this.state));
   }
 
-  // Tách payload broadcast gọn nhẹ (< 3KB) không kèm ngân hàng 35 câu hỏi để không bị ntfy.sh biến thành file đính kèm
-  private getBroadcastState(): FullGameState {
-    const { customQuestions, ...rest } = this.state;
-    const trimmedLiveEvents = (rest.liveEvents || []).slice(0, 10);
-    return {
-      ...rest,
-      liveEvents: trimmedLiveEvents,
-    } as FullGameState;
-  }
-
-  // Cập nhật state an toàn khi nhận từ mạng, giữ lại customQuestions nếu bản tin không gửi kèm
-  private applyIncomingState(payload: FullGameState) {
-    if (!payload || !payload.roomState) return;
-    const existingQuestions = this.state.customQuestions;
-    this.state = {
-      ...payload,
-      customQuestions: payload.customQuestions && payload.customQuestions.length > 0
-        ? payload.customQuestions
-        : existingQuestions,
-    };
-    this.notifyListeners();
-  }
-
   private saveAndBroadcast() {
     try {
       if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
@@ -240,7 +218,7 @@ class GameSyncService {
       }
     });
 
-    // Realtime Cloud Relay (ntfy.sh) - Đẩy trực tiếp tới toàn bộ điện thoại sinh viên không độ trễ (<3KB để không bị biến thành file)
+    // Realtime Cloud Relay (ntfy.sh) - Đẩy trực tiếp tới toàn bộ điện thoại sinh viên không độ trễ
     if (this.isHost || this.networkMode === 'host') {
       const now = Date.now();
       if (now - this.lastRelayBroadcastAt > 80) {
@@ -251,7 +229,7 @@ class GameSyncService {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'SYNC_STATE',
-              payload: this.getBroadcastState(),
+              payload: this.state,
             }),
           }).catch(() => {});
         } catch {}
@@ -352,14 +330,8 @@ class GameSyncService {
     startPeerWithId(roomId);
   }
 
-  public initClient(hostId = DEFAULT_HOST_ROOM_ID, initialHints?: { isLobbyOpen?: boolean }) {
+  public initClient(hostId = DEFAULT_HOST_ROOM_ID) {
     this.networkMode = 'client';
-
-    // Nếu URL mang cờ mở tuyển quân (?open=1), kích hoạt ngay lập tức để không bị giật lag
-    if (initialHints?.isLobbyOpen) {
-      this.state.roomState.isLobbyOpen = true;
-      this.notifyListeners();
-    }
 
     // Khởi động Realtime Cloud Relay (ntfy.sh) lắng nghe cập nhật từ Host sa bàn < 50ms
     this.startClientRelay();
@@ -383,44 +355,6 @@ class GameSyncService {
     } catch (e) {
       console.warn('[P2P Client] Khởi tạo client lỗi:', e);
     }
-  }
-
-  // Yêu cầu đồng bộ tức thời (dùng khi mở màn hình hoặc người dùng bấm nút kiểm tra trạng thái)
-  public requestSync() {
-    this.sendClientAction({ type: 'REQUEST_SYNC' });
-    if (this.clientConnection && this.clientConnection.open) {
-      try {
-        this.clientConnection.send({ type: 'REQUEST_SYNC' });
-      } catch {}
-    }
-
-    // Poll ngay thông điệp mới nhất từ Cloud Relay
-    fetch(`${RELAY_BASE}/${RELAY_STATE_TOPIC}/json?poll=1`)
-      .then((res) => res.text())
-      .then((text) => {
-        if (!text) return;
-        const lines = text.trim().split('\n');
-        for (let i = lines.length - 1; i >= 0; i--) {
-          try {
-            const raw = JSON.parse(lines[i]);
-            if (raw.event === 'message') {
-              if (raw.attachment?.url) {
-                fetch(raw.attachment.url)
-                  .then((r) => r.json())
-                  .then((d) => {
-                    if (d?.type === 'SYNC_STATE' && d.payload) this.applyIncomingState(d.payload);
-                  })
-                  .catch(() => {});
-              } else if (raw.message) {
-                const d = JSON.parse(raw.message);
-                if (d?.type === 'SYNC_STATE' && d.payload) this.applyIncomingState(d.payload);
-              }
-              break;
-            }
-          } catch {}
-        }
-      })
-      .catch(() => {});
   }
 
   private startHostRelay() {
@@ -451,67 +385,27 @@ class GameSyncService {
       this.clientEventSource = null;
     }
 
-    const handleIncomingRaw = async (raw: any) => {
-      try {
-        let data: any = null;
-        if (raw.attachment?.url) {
-          try {
-            const res = await fetch(raw.attachment.url);
-            data = await res.json();
-          } catch {}
-        } else if (raw.message) {
-          try {
-            data = JSON.parse(raw.message);
-          } catch {}
-        }
-
-        if (data?.type === 'SYNC_STATE' && data.payload) {
-          this.applyIncomingState(data.payload);
-        } else if (data?.type === 'COUNTDOWN_TICK') {
-          this.notifyCountdown(data.seconds);
-        } else if (data?.type === 'CLEAR_CLIENT_CACHE') {
-          this.handleClearLocalClientCache();
-        }
-      } catch (e) {
-        console.warn('[Relay Client] Parse Error:', e);
-      }
-    };
-
     try {
-      // 1. Lắng nghe SSE với since=10m để nhận ngay thông điệp mở sảnh gần nhất mà không bị mất gói tin
-      this.clientEventSource = new EventSource(`${RELAY_BASE}/${RELAY_STATE_TOPIC}/sse?since=10m`);
+      this.clientEventSource = new EventSource(`${RELAY_BASE}/${RELAY_STATE_TOPIC}/sse`);
       this.clientEventSource.onmessage = (event) => {
         try {
           const raw = JSON.parse(event.data);
-          if (raw.event === 'message') {
-            handleIncomingRaw(raw);
+          if (raw.event === 'message' && raw.message) {
+            const data = JSON.parse(raw.message);
+            if (data?.type === 'SYNC_STATE' && data.payload) {
+              this.state = data.payload;
+              this.notifyListeners();
+            } else if (data?.type === 'COUNTDOWN_TICK') {
+              this.notifyCountdown(data.seconds);
+            } else if (data?.type === 'CLEAR_CLIENT_CACHE') {
+              this.handleClearLocalClientCache();
+            }
           }
         } catch {}
       };
     } catch (e) {
       console.warn('[Relay Client] SSE Init Error:', e);
     }
-
-    // 2. Poll ngay lập tức 1 lần qua HTTP GET để có state hiện tại trước khi SSE hoàn tất bắt tay
-    fetch(`${RELAY_BASE}/${RELAY_STATE_TOPIC}/json?poll=1`)
-      .then((res) => res.text())
-      .then((text) => {
-        if (!text) return;
-        const lines = text.trim().split('\n');
-        for (let i = lines.length - 1; i >= 0; i--) {
-          try {
-            const raw = JSON.parse(lines[i]);
-            if (raw.event === 'message') {
-              handleIncomingRaw(raw);
-              break;
-            }
-          } catch {}
-        }
-      })
-      .catch(() => {});
-
-    // 3. Gửi action yêu cầu Host phát bản tin state hiện tại
-    this.sendClientAction({ type: 'REQUEST_SYNC' });
   }
 
   private connectToHost(hostId: string) {
@@ -530,7 +424,8 @@ class GameSyncService {
 
       conn.on('data', (msg: any) => {
         if (msg?.type === 'SYNC_STATE' && msg.payload) {
-          this.applyIncomingState(msg.payload);
+          this.state = msg.payload;
+          this.notifyListeners();
         } else if (msg?.type === 'COUNTDOWN_TICK') {
           this.notifyCountdown(msg.seconds);
         } else if (msg?.type === 'CLEAR_CLIENT_CACHE') {
@@ -785,7 +680,8 @@ class GameSyncService {
         if (res.ok) {
           const remoteData = await res.json();
           if (remoteData && remoteData.teams && remoteData.roomState) {
-            this.applyIncomingState(remoteData);
+            this.state = remoteData;
+            this.notifyListeners();
           }
         }
       } catch {
@@ -818,16 +714,6 @@ class GameSyncService {
     let loopCounter = 0;
 
     this.mainGameLoopTimer = setInterval(() => {
-      // Khi đang ở sảnh chờ tuyển quân, Host phát heartbeat định kỳ mỗi 3 giây
-      // để mọi điện thoại mới quét QR đồng bộ ngay lập tức mà không phải chờ thao tác bấm
-      if (this.state.roomState.phase === 'WAITING' && this.state.roomState.isLobbyOpen) {
-        loopCounter++;
-        if (loopCounter % 3 === 0 && (this.isHost || this.networkMode === 'host')) {
-          this.saveAndBroadcast();
-        }
-        return;
-      }
-
       if (this.state.roomState.phase !== 'BATTLE') return;
 
       loopCounter++;
