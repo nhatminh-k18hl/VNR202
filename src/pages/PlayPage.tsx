@@ -16,11 +16,12 @@ import {
   Radio,
   Users,
   Trophy,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import { AnswerKey, BoostItem, PlayerState, Question, TeamId, TeamState } from '../types/game';
 import { INITIAL_TEAMS_CONFIG } from '../config/adminAuth';
-import { fetchAndParseQuestions } from '../utils/markdownParser';
+import { fetchAndParseQuestions, BUILTIN_QUESTIONS } from '../utils/markdownParser';
 import { FullGameState, gameSyncService } from '../services/gameSyncService';
 import { soundService } from '../services/soundService';
 import { getPlayerRankingDetails, PlayerPersonalRanking } from '../utils/statsCalculator';
@@ -82,9 +83,9 @@ export const PlayPage: React.FC = () => {
   // Đếm ngược xuất kích đồng bộ từ Host (3... 2... 1...)
   const [countdownVal, setCountdownVal] = useState<number | null>(gameState.roomState.countdownRemaining ?? null);
 
-  // Ngân hàng câu hỏi gốc & Hàng đợi câu hỏi xáo trộn riêng cho client này
-  const [rawQuestions, setRawQuestions] = useState<Question[]>([]);
-  const [playerDeck, setPlayerDeck] = useState<Question[]>([]);
+  // Ngân hàng câu hỏi gốc & Hàng đợi câu hỏi xáo trộn riêng cho client này (Nạp sẵn BUILTIN_QUESTIONS chống 404)
+  const [rawQuestions, setRawQuestions] = useState<Question[]>(() => BUILTIN_QUESTIONS);
+  const [playerDeck, setPlayerDeck] = useState<Question[]>(() => generateNextRound(BUILTIN_QUESTIONS));
   const [deckIndex, setDeckIndex] = useState<number>(0);
 
   // Trạng thái trả lời câu hỏi hiện tại
@@ -110,9 +111,37 @@ export const PlayPage: React.FC = () => {
     const hash = window.location.hash;
     const queryString = hash.includes('?') ? hash.split('?')[1] : window.location.search.replace(/^\?/, '');
     const urlParams = new URLSearchParams(queryString);
-    const hostId = urlParams.get('host') || undefined;
-    gameSyncService.initClient(hostId);
+    const searchParams = new URLSearchParams(window.location.search);
+    const hostId = urlParams.get('host') || searchParams.get('host') || undefined;
+    const isOpenFromUrl = urlParams.get('open') === '1' || searchParams.get('open') === '1' || urlParams.get('lobby') === 'open' || searchParams.get('lobby') === 'open';
+
+    gameSyncService.initClient(hostId, { isLobbyOpen: isOpenFromUrl });
+    if (isOpenFromUrl) {
+      setGameState((prev) => ({
+        ...prev,
+        roomState: {
+          ...prev.roomState,
+          isLobbyOpen: true,
+        },
+      }));
+    }
   }, []);
+
+  // Tự động kiểm tra trạng thái mở tuyển quân mỗi 2.5s khi đang ở màn hình chờ
+  useEffect(() => {
+    if (isJoined || gameState.roomState.isLobbyOpen || isBattlePhase) return;
+    const interval = setInterval(() => {
+      gameSyncService.requestSync();
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [isJoined, gameState.roomState.isLobbyOpen, isBattlePhase]);
+
+  const [isCheckingLobby, setIsCheckingLobby] = useState<boolean>(false);
+  const handleManualCheckLobby = () => {
+    setIsCheckingLobby(true);
+    gameSyncService.requestSync();
+    setTimeout(() => setIsCheckingLobby(false), 800);
+  };
 
   // 2. Khôi phục danh tính đã lưu từ localStorage
   useEffect(() => {
@@ -654,6 +683,17 @@ export const PlayPage: React.FC = () => {
             <div className="p-3 rounded-2xl bg-stone-100 dark:bg-[#0c120e] text-xs text-stone-500 font-mono flex items-center justify-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
               <span>Đang kết nối thời gian thực với phòng tác chiến...</span>
+            </div>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={handleManualCheckLobby}
+                disabled={isCheckingLobby}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold text-xs flex items-center justify-center gap-2 mx-auto shadow-md cursor-pointer transition-all active:scale-95 disabled:opacity-75"
+              >
+                <RotateCcw className={`w-3.5 h-3.5 ${isCheckingLobby ? 'animate-spin' : ''}`} />
+                <span>{isCheckingLobby ? 'Đang kiểm tra...' : 'Kiểm tra sảnh đã mở chưa'}</span>
+              </button>
             </div>
           </div>
         ) : (
